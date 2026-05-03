@@ -7,6 +7,7 @@ import healthRoutes from './routes/health.js'
 import postsRoutes from './routes/posts.js'
 import authRoutes from './routes/auth.js'
 import meRoutes from './routes/me.js'
+import adminRoutes from './routes/admin.js'
 
 const fastify = Fastify({ logger: true })
 
@@ -20,6 +21,7 @@ await fastify.register(healthRoutes)
 await fastify.register(postsRoutes)
 await fastify.register(authRoutes)
 await fastify.register(meRoutes)
+await fastify.register(adminRoutes)
 
 const port = Number(process.env.PORT) || 3000
 await fastify.listen({ port, host: '0.0.0.0' })
