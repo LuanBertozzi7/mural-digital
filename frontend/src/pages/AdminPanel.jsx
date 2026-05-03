@@ -27,6 +27,7 @@ export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState('PENDING')
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(null)
+  const [actionError, setActionError] = useState(null)
   const navigate = useNavigate()
 
   const fetchPosts = useCallback(() => {
@@ -45,12 +46,15 @@ export default function AdminPanel() {
 
   async function setStatus(id, status) {
     setActionLoading(id + status)
+    setActionError(null)
     try {
       await apiFetch(`/api/admin/posts/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       })
       setPosts((prev) => prev.map((p) => p.id === id ? { ...p, status } : p))
+    } catch (e) {
+      setActionError(`Erro ao atualizar post ${id}: ${e.message}`)
     } finally {
       setActionLoading(null)
     }
@@ -59,9 +63,12 @@ export default function AdminPanel() {
   async function deletePost(id) {
     if (!confirm('Remover este post?')) return
     setActionLoading(id + 'del')
+    setActionError(null)
     try {
       await apiFetch(`/api/admin/posts/${id}`, { method: 'DELETE' })
       setPosts((prev) => prev.filter((p) => p.id !== id))
+    } catch (e) {
+      setActionError(`Erro ao remover post ${id}: ${e.message}`)
     } finally {
       setActionLoading(null)
     }
@@ -87,6 +94,12 @@ export default function AdminPanel() {
             </button>
           ))}
         </div>
+
+        {actionError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-4">
+            {actionError}
+          </div>
+        )}
 
         {loading && <p className="text-gray-500 text-center py-12">Carregando...</p>}
         {!loading && posts.length === 0 && (

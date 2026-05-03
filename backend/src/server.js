@@ -12,7 +12,8 @@ import adminRoutes from './routes/admin.js'
 const fastify = Fastify({ logger: true })
 
 await fastify.register(cors, {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173'
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE']
 })
 
 await fastify.register(prismaPlugin)
