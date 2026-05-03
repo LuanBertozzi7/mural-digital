@@ -4,16 +4,16 @@ import { apiFetch } from '../api'
 import { getUser, isLoggedIn } from '../auth'
 
 const STATUS_FILTER_OPTIONS = [
-  { value: '', label: 'Todos' },
   { value: 'PENDING', label: 'Aguardando' },
   { value: 'APPROVED', label: 'Aprovados' },
   { value: 'REJECTED', label: 'Rejeitados' },
+  { value: '', label: 'Todos' },
 ]
 
 const STATUS_BADGE = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  APPROVED: 'bg-green-100 text-green-800',
-  REJECTED: 'bg-red-100 text-red-800',
+  PENDING: 'bg-amber-50 text-amber-700 border border-amber-200',
+  APPROVED: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  REJECTED: 'bg-red-50 text-red-600 border border-red-200',
 }
 const STATUS_LABEL = { PENDING: 'Aguardando', APPROVED: 'Aprovado', REJECTED: 'Rejeitado' }
 
@@ -61,7 +61,7 @@ export default function AdminPanel() {
   }
 
   async function deletePost(id) {
-    if (!confirm('Remover este post?')) return
+    if (!confirm('Remover este post permanentemente?')) return
     setActionLoading(id + 'del')
     setActionError(null)
     try {
@@ -74,20 +74,29 @@ export default function AdminPanel() {
     }
   }
 
+  const pendingCount = posts.filter(p => p.status === 'PENDING').length
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Painel de moderação</h1>
+    <div className="min-h-screen">
+      <div className="max-w-3xl mx-auto px-4 py-10">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Moderação</h1>
+          <p className="text-sm text-gray-400">
+            {statusFilter === 'PENDING' && posts.length > 0
+              ? `${posts.length} post${posts.length > 1 ? 's' : ''} aguardando revisão`
+              : 'Gerencie os posts da comunidade'}
+          </p>
+        </div>
 
         <div className="flex gap-2 mb-6 flex-wrap">
           {STATUS_FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setStatusFilter(opt.value)}
-              className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+              className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
                 statusFilter === opt.value
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
               }`}
             >
               {opt.label}
@@ -96,28 +105,30 @@ export default function AdminPanel() {
         </div>
 
         {actionError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm mb-5">
             {actionError}
           </div>
         )}
 
-        {loading && <p className="text-gray-500 text-center py-12">Carregando...</p>}
+        {loading && <p className="text-gray-400 text-sm text-center py-12">Carregando...</p>}
         {!loading && posts.length === 0 && (
-          <p className="text-gray-400 text-center py-12">Nenhum post encontrado.</p>
+          <p className="text-gray-400 text-sm text-center py-12">Nenhum post nesta categoria.</p>
         )}
 
         <div className="flex flex-col gap-4">
           {posts.map((p) => (
             <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3 mb-1">
-                <h2 className="text-base font-semibold text-gray-900">{p.title}</h2>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${STATUS_BADGE[p.status]}`}>
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 leading-snug">{p.title}</h2>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${STATUS_BADGE[p.status]}`}>
                   {STATUS_LABEL[p.status]}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 mb-2">{p.description}</p>
-              <div className="flex items-center gap-3 text-xs text-gray-400 mb-4">
-                <span>{CATEGORY_LABEL[p.category]}</span>
+
+              <p className="text-sm text-gray-500 leading-relaxed mb-4">{p.description}</p>
+
+              <div className="flex items-center gap-3 text-xs text-gray-400 pb-4 border-b border-gray-100 mb-4">
+                <span className="font-medium text-gray-500">{CATEGORY_LABEL[p.category]}</span>
                 <span>·</span>
                 <span>{p.neighborhood}</span>
                 <span>·</span>
@@ -130,27 +141,27 @@ export default function AdminPanel() {
                 {p.status !== 'APPROVED' && (
                   <button
                     onClick={() => setStatus(p.id, 'APPROVED')}
-                    disabled={actionLoading === p.id + 'APPROVED'}
-                    className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                    disabled={!!actionLoading}
+                    className="text-xs font-medium bg-emerald-600 text-white px-3.5 py-1.5 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
                   >
-                    Aprovar
+                    {actionLoading === p.id + 'APPROVED' ? '...' : 'Aprovar'}
                   </button>
                 )}
                 {p.status !== 'REJECTED' && (
                   <button
                     onClick={() => setStatus(p.id, 'REJECTED')}
-                    disabled={actionLoading === p.id + 'REJECTED'}
-                    className="text-xs bg-yellow-600 text-white px-3 py-1.5 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+                    disabled={!!actionLoading}
+                    className="text-xs font-medium bg-amber-500 text-white px-3.5 py-1.5 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors"
                   >
-                    Rejeitar
+                    {actionLoading === p.id + 'REJECTED' ? '...' : 'Rejeitar'}
                   </button>
                 )}
                 <button
                   onClick={() => deletePost(p.id)}
-                  disabled={actionLoading === p.id + 'del'}
-                  className="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  disabled={!!actionLoading}
+                  className="text-xs font-medium text-red-500 border border-red-200 px-3.5 py-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors ml-auto"
                 >
-                  Remover
+                  {actionLoading === p.id + 'del' ? '...' : 'Remover'}
                 </button>
               </div>
             </div>
