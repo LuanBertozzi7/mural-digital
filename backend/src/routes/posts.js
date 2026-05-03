@@ -41,6 +41,7 @@ export default async function postsRoutes(fastify) {
   })
 
   fastify.post('/api/posts', {
+    onRequest: [fastify.optionalAuth],
     schema: {
       body: {
         type: 'object',
@@ -55,9 +56,10 @@ export default async function postsRoutes(fastify) {
     }
   }, async (req, reply) => {
     const { title, description, category, neighborhood } = req.body
+    const userId = req.user?.userId ?? null
 
     const post = await fastify.prisma.post.create({
-      data: { title, description, category, neighborhood }
+      data: { title, description, category, neighborhood, userId }
     })
 
     return reply.code(201).send(post)
