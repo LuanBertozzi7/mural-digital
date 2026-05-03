@@ -7,10 +7,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Category {
+  VAGAS
+  PERDIDOS
+  PROBLEMAS
+  AVISOS
+  EVENTOS
+  COMPRAS
+}
+
+enum PostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
   passwordHash String
   name         String
+  role         Role     @default(USER)
   createdAt    DateTime @default(now())
+  posts        Post[]
+}
+
+model Post {
+  id           Int        @id @default(autoincrement())
+  title        String
+  description  String
+  category     Category
+  neighborhood String
+  status       PostStatus @default(PENDING)
+  userId       Int?
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([status, category, neighborhood])
 }

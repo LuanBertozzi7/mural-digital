@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s localhost*)",
+      "Bash(podman *)",
+      "Bash(npx prisma *)",
+      "Bash(npm install*)",
+      "Bash(npm run dev*)",
+      "Bash(virsh dumpxml *)",
+      "Bash(virsh dominfo *)",
+      "Bash(dpkg -l *)",
+      "Bash(flatpak list *)",
+      "Bash(flatpak info *)",
+      "Bash(ufw status *)"
+    ]
+  }
+}
