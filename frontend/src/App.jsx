@@ -5,6 +5,7 @@ import Submit from './pages/Submit'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import MyPosts from './pages/MyPosts'
+import AdminPanel from './pages/AdminPanel'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/me/posts" element={<MyPosts />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </main>
     </BrowserRouter>
