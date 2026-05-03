@@ -17,12 +17,12 @@ const CATEGORY_PILL = {
 }
 
 const CATEGORY_BORDER = {
-  VAGAS: 'border-l-emerald-400',
-  PERDIDOS: 'border-l-amber-400',
-  PROBLEMAS: 'border-l-red-400',
-  AVISOS: 'border-l-blue-400',
-  EVENTOS: 'border-l-purple-400',
-  COMPRAS: 'border-l-orange-400',
+  VAGAS: 'border-emerald-300',
+  PERDIDOS: 'border-amber-300',
+  PROBLEMAS: 'border-red-300',
+  AVISOS: 'border-blue-300',
+  EVENTOS: 'border-purple-300',
+  COMPRAS: 'border-orange-300',
 }
 
 export default function PostCard({ post }) {
@@ -31,7 +31,7 @@ export default function PostCard({ post }) {
   })
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 border-l-4 ${CATEGORY_BORDER[post.category]} p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3`}>
+    <div className={`bg-white rounded-xl border ${CATEGORY_BORDER[post.category]} p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3`}>
       <div className="flex items-center gap-2 flex-wrap">
         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORY_PILL[post.category]}`}>
           {CATEGORY_LABELS[post.category]}
