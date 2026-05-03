@@ -4,6 +4,7 @@ import Feed from './pages/Feed'
 import Submit from './pages/Submit'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import MyPosts from './pages/MyPosts'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
           <Route path="/submit" element={<Submit />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/me/posts" element={<MyPosts />} />
         </Routes>
       </main>
     </BrowserRouter>
