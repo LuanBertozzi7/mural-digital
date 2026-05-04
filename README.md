@@ -6,19 +6,18 @@ Plataforma comunitária para moradores de Pimenta Bueno - RO publicarem postagen
 
 - **Backend:** Node.js 20 · Fastify 5 · Prisma 6 · PostgreSQL 16
 - **Frontend:** React 18 · Vite 5 · React Router 6 · Tailwind CSS 4
-- **Infra dev:** Podman/Docker (apenas para o Postgres)
 
 ---
 
-## Setup do zero
+## Desenvolvimento local
 
 ### 1. Banco de dados
 
 ```bash
-# Com Docker
+# Docker
 docker compose up -d
 
-# Com Podman
+# Podman
 podman run -d --name mural-postgres \
   -e POSTGRES_USER=mural -e POSTGRES_PASSWORD=mural -e POSTGRES_DB=mural \
   -p 5432:5432 docker.io/library/postgres:16
@@ -28,10 +27,10 @@ podman run -d --name mural-postgres \
 
 ```bash
 cd backend
-cp .env.example .env        # edite as variáveis se necessário
+cp .env.example .env        # edite as variáveis
 npm install
 npx prisma migrate dev
-node prisma/seed.js         # cria o admin definido no .env
+node prisma/seed.js
 npm run dev                 # http://localhost:3000
 ```
 
@@ -39,24 +38,140 @@ npm run dev                 # http://localhost:3000
 
 ```bash
 cd frontend
+cp .env.example .env        # edite VITE_API_URL se necessário
 npm install
 npm run dev                 # http://localhost:5173
 ```
 
 ---
 
-## Variáveis de ambiente (`backend/.env`)
+## Deploy na VPS (Rocky Linux 9)
 
-| Variável | Padrão | Descrição |
-|---|---|---|
-| `DATABASE_URL` | `postgresql://mural:mural@localhost:5432/mural` | String de conexão Postgres |
-| `JWT_SECRET` | — | Segredo para assinar tokens JWT (troque em prod) |
-| `ADMIN_EMAIL` | `admin@mural.local` | E-mail do admin criado pelo seed |
-| `ADMIN_PASSWORD` | `trocar-em-prod` | Senha do admin (troque em prod) |
-| `ADMIN_NAME` | `Administrador` | Nome exibido do admin |
-| `PORT` | `3000` | Porta do servidor |
-| `CORS_ORIGIN` | `http://localhost:5173` | Origem permitida pelo CORS |
-| `NODE_ENV` | — | `production` desativa o pino-pretty |
+### Pré-requisitos
+
+```bash
+# Node.js 20
+curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+sudo dnf install -y nodejs
+
+# PM2
+sudo npm install -g pm2
+
+# Nginx
+sudo dnf install -y nginx
+sudo systemctl enable --now nginx
+
+# PostgreSQL 16
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+sudo dnf install -y postgresql16-server
+sudo /usr/pgsql-16/bin/postgresql-16-setup initdb
+sudo systemctl enable --now postgresql-16
+
+# Criar banco e usuário
+sudo -u postgres psql -c "CREATE USER mural WITH PASSWORD 'senha-forte';"
+sudo -u postgres psql -c "CREATE DATABASE mural OWNER mural;"
+```
+
+### Variáveis de ambiente
+
+**`backend/.env`** (produção):
+```env
+DATABASE_URL="postgresql://mural:senha-forte@localhost:5432/mural"
+JWT_SECRET="string-aleatoria-longa-e-segura"
+ADMIN_EMAIL="seu@email.com"
+ADMIN_PASSWORD="senha-forte-do-admin"
+ADMIN_NAME="Administrador"
+PORT=3000
+CORS_ORIGIN="https://seudominio.com"
+NODE_ENV=production
+```
+
+**`frontend/.env`** (produção):
+```env
+VITE_API_URL=https://seudominio.com
+```
+
+### Deploy
+
+```bash
+# Clonar e instalar
+git clone https://github.com/LuanBertozzi7/mural-digital.git /var/www/mural-digital
+cd /var/www/mural-digital
+
+# Backend
+cd backend
+npm install --omit=dev
+npx prisma migrate deploy
+node prisma/seed.js
+pm2 start src/server.js --name mural-api
+pm2 save
+pm2 startup   # seguir as instruções do comando
+
+# Frontend (build estático)
+cd ../frontend
+npm install
+npm run build   # gera dist/
+```
+
+### Nginx
+
+Criar `/etc/nginx/conf.d/mural.conf`:
+
+```nginx
+server {
+    listen 80;
+    server_name seudominio.com;
+
+    # Frontend (build estático)
+    root /var/www/mural-digital/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Backend API
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Uploads (avatares)
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+    }
+}
+```
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### HTTPS (Certbot)
+
+```bash
+sudo dnf install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d seudominio.com
+```
+
+### Atualizações futuras
+
+```bash
+cd /var/www/mural-digital
+git pull
+
+# Backend
+cd backend && npm install --omit=dev
+npx prisma migrate deploy
+pm2 restart mural-api
+
+# Frontend
+cd ../frontend && npm run build
+```
 
 ---
 
@@ -65,50 +180,26 @@ npm run dev                 # http://localhost:5173
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
 | GET | `/api/health` | — | Smoke test |
-| GET | `/api/posts` | — | Feed paginado (20/pág). Query: `category`, `neighborhood`, `q`, `page` |
-| POST | `/api/posts` | opcional | Cria post PENDING. Token → associa userId |
-| POST | `/api/auth/register` | — | Cadastro. Retorna `{ token, user }` |
-| POST | `/api/auth/login` | — | Login. Retorna `{ token, user }` |
-| GET | `/api/me/posts` | sim | Posts do usuário autenticado |
-| GET | `/api/admin/posts` | admin | Lista todos, query `?status=` |
-| PATCH | `/api/admin/posts/:id` | admin | Altera status (`PENDING`/`APPROVED`/`REJECTED`) |
+| GET | `/api/posts` | — | Feed paginado. Query: `category`, `q`, `page` |
+| POST | `/api/posts` | opcional | Cria post PENDING |
+| POST | `/api/auth/register` | — | Cadastro → `{ token, user }` |
+| POST | `/api/auth/login` | — | Login → `{ token, user }` |
+| GET | `/api/me/profile` | sim | Perfil do usuário |
+| PATCH | `/api/me/profile` | sim | Atualiza nome e bairro |
+| POST | `/api/me/avatar` | sim | Upload de foto de perfil |
+| GET | `/api/me/posts` | sim | Posts do usuário |
+| PATCH | `/api/me/posts/:id` | sim | Edita post próprio (volta a PENDING) |
+| DELETE | `/api/me/posts/:id` | sim | Exclui post próprio |
+| GET | `/api/admin/posts` | admin | Lista todos com filtro `?status=` |
+| PATCH | `/api/admin/posts/:id` | admin | Altera status |
 | DELETE | `/api/admin/posts/:id` | admin | Remove post |
 
 ---
 
-## Smoke tests
+## Próximos passos
 
-```bash
-# Health
-curl localhost:3000/api/health
-
-# Post anônimo
-curl -X POST localhost:3000/api/posts \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Teste","description":"Desc","category":"AVISOS","neighborhood":"Centro"}'
-
-# Login admin
-curl -X POST localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@mural.local","password":"trocar-em-prod"}'
-
-# Aprovar post (substituir TOKEN e ID)
-curl -X PATCH localhost:3000/api/admin/posts/1 \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"APPROVED"}'
-```
-
----
-
-## Próximos passos (fora do escopo do MVP)
-
-- **Upload de imagens** — armazenamento em S3/R2, campo `imageUrl` no Post
-- **Mapa interativo** — Leaflet + OpenStreetMap com pin por bairro
-- **E-mail** — confirmação de cadastro e recuperação de senha (Nodemailer/Resend)
-- **Rate limit** — `@fastify/rate-limit` para evitar spam
-- **Captcha** — proteção no formulário de post anônimo
-- **Edição de post** — `PATCH /api/me/posts/:id` para o próprio autor
-- **Perfil editável** — nome e senha
-- **Multi-cidade** — campo `city` no Post, filtro no feed
-- **Notificações** — aviso ao autor quando post for aprovado/rejeitado
+- Upload de imagens nos posts
+- Mapa interativo (Leaflet + OpenStreetMap)
+- E-mail de notificação (aprovação/rejeição)
+- Rate limit (`@fastify/rate-limit`)
+- Multi-cidade
