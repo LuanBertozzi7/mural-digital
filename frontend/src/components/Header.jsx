@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { getUser, isLoggedIn, logout } from '../auth'
+import Avatar from './Avatar'
 
 function NavLink({ to, children, onClick }) {
   const { pathname } = useLocation()
@@ -54,8 +55,14 @@ function DarkToggle() {
 
 export default function Header() {
   const navigate = useNavigate()
-  const user = getUser()
+  const [user, setUser] = useState(getUser)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    function onUpdate() { setUser(getUser()) }
+    window.addEventListener('userUpdated', onUpdate)
+    return () => window.removeEventListener('userUpdated', onUpdate)
+  }, [])
 
   function handleLogout() {
     logout()
@@ -83,7 +90,10 @@ export default function Header() {
               <NavLink to="/me/posts">Meus posts</NavLink>
               {user?.role === 'ADMIN' && <NavLink to="/admin">Moderação</NavLink>}
               <span className="text-gray-300 dark:text-gray-700 mx-1">|</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400 px-1">{user?.name}</span>
+              <Link to="/me/profile" className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <Avatar user={user} size="sm" />
+                <span className="text-sm text-gray-500 dark:text-gray-400">{user?.name}</span>
+              </Link>
               <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-red-500 px-2 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                 Sair
               </button>
@@ -130,7 +140,10 @@ export default function Header() {
               <NavLink to="/me/posts" onClick={closeMenu}>Meus posts</NavLink>
               {user?.role === 'ADMIN' && <NavLink to="/admin" onClick={closeMenu}>Moderação</NavLink>}
               <div className="pt-2 mt-1 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">{user?.name}</span>
+                <Link to="/me/profile" onClick={closeMenu} className="flex items-center gap-2">
+                  <Avatar user={user} size="sm" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{user?.name}</span>
+                </Link>
                 <button onClick={handleLogout} className="text-sm text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                   Sair
                 </button>
