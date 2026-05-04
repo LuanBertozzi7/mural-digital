@@ -37,7 +37,7 @@ export default function Feed() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [page, category, neighborhood, q])
+  }, [page, category, q])
 
   // Intersection observer for infinite scroll
   useEffect(() => {
