@@ -1,10 +1,13 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+html {
+  font-size: 20px;
+}
+
 body {
   background: #f1f5f9;
   font-family: 'Noto Sans', sans-serif;
-  font-size: 20px;
 }
 
 .dark body {
