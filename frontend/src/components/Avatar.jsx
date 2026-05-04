@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:3000'
+import { BASE } from '../api'
 
 export default function Avatar({ user, size = 'md' }) {
   const sizes = {

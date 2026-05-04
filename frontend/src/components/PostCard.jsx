@@ -1,10 +1,8 @@
+import Avatar from './Avatar'
+
 const CATEGORY_LABELS = {
-  VAGAS: 'Vagas',
-  PERDIDOS: 'Perdidos',
-  PROBLEMAS: 'Problemas',
-  AVISOS: 'Avisos',
-  EVENTOS: 'Eventos',
-  COMPRAS: 'Compras',
+  VAGAS: 'Vagas', PERDIDOS: 'Perdidos', PROBLEMAS: 'Problemas',
+  AVISOS: 'Avisos', EVENTOS: 'Eventos', COMPRAS: 'Compras',
 }
 
 const CATEGORY_PILL = {
@@ -14,15 +12,6 @@ const CATEGORY_PILL = {
   AVISOS: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   EVENTOS: 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
   COMPRAS: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-}
-
-const CATEGORY_BORDER = {
-  VAGAS: 'border-emerald-300 dark:border-emerald-700',
-  PERDIDOS: 'border-amber-300 dark:border-amber-700',
-  PROBLEMAS: 'border-red-300 dark:border-red-700',
-  AVISOS: 'border-blue-300 dark:border-blue-700',
-  EVENTOS: 'border-purple-300 dark:border-purple-700',
-  COMPRAS: 'border-orange-300 dark:border-orange-700',
 }
 
 export default function PostCard({ post }) {
@@ -43,6 +32,9 @@ export default function PostCard({ post }) {
           </svg>
           {post.neighborhood}
         </span>
+        {post.editedAt && (
+          <span className="text-xs text-gray-400 dark:text-gray-500 italic">· editado</span>
+        )}
       </div>
 
       <div>
@@ -51,7 +43,10 @@ export default function PostCard({ post }) {
       </div>
 
       <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800">
-        <span className="font-medium text-gray-500 dark:text-gray-400">{post.author}</span>
+        <div className="flex items-center gap-2">
+          <Avatar user={{ name: post.author, avatarUrl: post.authorAvatar }} size="sm" />
+          <span className="font-medium text-gray-500 dark:text-gray-400">{post.author}</span>
+        </div>
         <span>{date}</span>
       </div>
     </div>
