@@ -79,7 +79,7 @@ export default function Submit() {
             <textarea name="description" value={form.description} onChange={handleChange} required rows={5} maxLength={2000} placeholder="Conte mais detalhes..." className={`${INPUT} resize-none`} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={LABEL}>Categoria</label>
               <select name="category" value={form.category} onChange={handleChange} className={INPUT}>

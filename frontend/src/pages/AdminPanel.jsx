@@ -122,7 +122,7 @@ export default function AdminPanel() {
 
               <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-4">{p.description}</p>
 
-              <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500 pb-4 border-b border-gray-100 dark:border-gray-800 mb-4">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400 dark:text-gray-500 pb-4 border-b border-gray-100 dark:border-gray-800 mb-4">
                 <span className="font-medium text-gray-500 dark:text-gray-400">{CATEGORY_LABEL[p.category]}</span>
                 <span>·</span>
                 <span>{p.neighborhood}</span>
