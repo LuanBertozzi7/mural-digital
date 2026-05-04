@@ -31,7 +31,7 @@ export default function PostCard({ post }) {
   })
 
   return (
-    <div className={`bg-white dark:bg-gray-900 rounded-xl border ${CATEGORY_BORDER[post.category]} p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 select-none`}>
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 select-none">
       <div className="flex items-center gap-2 flex-wrap">
         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORY_PILL[post.category]}`}>
           {CATEGORY_LABELS[post.category]}
