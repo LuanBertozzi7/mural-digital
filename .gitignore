@@ -5,4 +5,4 @@ dist/
 .prisma/
 uploads/avatars/*
 !uploads/avatars/.gitkeep
-.claude
+/.claude
