@@ -10,7 +10,12 @@ import authRoutes from './routes/auth.js'
 import meRoutes from './routes/me.js'
 import adminRoutes from './routes/admin.js'
 
-const fastify = Fastify({ logger: true })
+const isProd = process.env.NODE_ENV === 'production'
+const fastify = Fastify({
+  logger: isProd
+    ? true
+    : { transport: { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:HH:MM:ss', ignore: 'pid,hostname' } } }
+})
 
 await fastify.register(helmet, { contentSecurityPolicy: false })
 await fastify.register(cors, {
