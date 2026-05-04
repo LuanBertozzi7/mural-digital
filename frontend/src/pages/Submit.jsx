@@ -44,7 +44,7 @@ export default function Submit() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-lg mx-auto px-4 py-10">
+      <div className="max-w-xl mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-1">Nova publicação</h1>
           <p className="text-sm text-gray-400">

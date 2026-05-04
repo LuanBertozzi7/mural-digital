@@ -76,7 +76,7 @@ export default function Feed() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-2xl mx-auto px-4 py-10">
+      <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-1">Feed da comunidade</h1>
           <p className="text-sm text-gray-400">Pimenta Bueno — RO</p>
