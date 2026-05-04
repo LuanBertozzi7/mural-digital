@@ -132,7 +132,7 @@ export default function Header() {
 
       {/* Mobile menu dropdown */}
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 flex flex-col gap-1">
+        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 flex flex-col gap-1 animate-slide-down">
           <NavLink to="/" onClick={closeMenu}>Feed</NavLink>
           <NavLink to="/submit" onClick={closeMenu}>Publicar</NavLink>
           {isLoggedIn() ? (

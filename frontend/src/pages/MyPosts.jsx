@@ -67,7 +67,7 @@ export default function MyPosts() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen animate-fade-up">
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-1">Meus posts</h1>

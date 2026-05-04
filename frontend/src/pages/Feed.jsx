@@ -138,7 +138,11 @@ export default function Feed() {
         )}
 
         <div className="flex flex-col gap-4">
-          {posts.map((p) => <PostCard key={p.id} post={p} />)}
+          {posts.map((p, i) => (
+            <div key={p.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
+              <PostCard post={p} />
+            </div>
+          ))}
         </div>
 
         {/* Skeleton loader */}

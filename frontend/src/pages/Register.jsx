@@ -31,7 +31,7 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 animate-fade-up">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <span className="inline-flex w-10 h-10 bg-blue-600 rounded-xl items-center justify-center text-white font-bold text-lg mb-3">M</span>
