@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { getUser, isLoggedIn, logout } from '../auth'
 
@@ -20,7 +20,10 @@ function NavLink({ to, children }) {
 }
 
 function DarkToggle() {
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  })
 
   function toggle() {
     const next = !dark
@@ -51,15 +54,6 @@ function DarkToggle() {
 export default function Header() {
   const navigate = useNavigate()
   const user = getUser()
-
-  // Apply saved theme on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    if (saved === 'dark' || (!saved && prefersDark)) {
-      document.documentElement.classList.add('dark')
-    }
-  }, [])
 
   function handleLogout() {
     logout()
