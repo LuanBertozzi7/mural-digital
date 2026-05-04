@@ -8,17 +8,22 @@ export default async function postsRoutes(fastify) {
         properties: {
           category: { type: 'string', enum: VALID_CATEGORIES },
           neighborhood: { type: 'string' },
+          q: { type: 'string' },
           page: { type: 'integer', minimum: 1, default: 1 }
         }
       }
     }
   }, async (req) => {
-    const { category, neighborhood, page = 1 } = req.query
+    const { category, neighborhood, q, page = 1 } = req.query
     const PAGE_SIZE = 20
 
     const where = { status: 'APPROVED' }
     if (category) where.category = category
     if (neighborhood) where.neighborhood = { contains: neighborhood, mode: 'insensitive' }
+    if (q) where.OR = [
+      { title: { contains: q, mode: 'insensitive' } },
+      { description: { contains: q, mode: 'insensitive' } }
+    ]
 
     const posts = await fastify.prisma.post.findMany({
       where,

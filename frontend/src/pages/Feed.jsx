@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '../api'
 import PostCard from '../components/PostCard'
@@ -11,47 +11,112 @@ const CATEGORY_LABELS = {
 
 export default function Feed() {
   const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
   const [category, setCategory] = useState('')
   const [neighborhood, setNeighborhood] = useState('')
+  const [q, setQ] = useState('')
   const [neighborhoodInput, setNeighborhoodInput] = useState('')
-  const [page, setPage] = useState(1)
+  const [qInput, setQInput] = useState('')
 
+  const sentinelRef = useRef(null)
+
+  // Load posts — replaces on page=1, appends on page>1
   useEffect(() => {
     setLoading(true)
     setError(null)
     const params = new URLSearchParams({ page })
     if (category) params.set('category', category)
     if (neighborhood) params.set('neighborhood', neighborhood)
+    if (q) params.set('q', q)
 
     apiFetch(`/api/posts?${params}`)
-      .then(setPosts)
+      .then((newPosts) => {
+        setPosts((prev) => page === 1 ? newPosts : [...prev, ...newPosts])
+        setHasMore(newPosts.length === 20)
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [category, neighborhood, page])
+  }, [page, category, neighborhood, q])
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && hasMore && !loading) {
+        setPage((p) => p + 1)
+      }
+    }, { rootMargin: '300px' })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, loading])
+
+  function resetAndApply(changes) {
+    setPosts([])
+    setHasMore(true)
+    setPage(1)
+    if ('category' in changes) setCategory(changes.category)
+    if ('neighborhood' in changes) setNeighborhood(changes.neighborhood)
+    if ('q' in changes) setQ(changes.q)
+  }
 
   function handleCategoryClick(c) {
-    setCategory((prev) => prev === c ? '' : c)
-    setPage(1)
+    resetAndApply({ category: category === c ? '' : c })
   }
 
   function handleNeighborhoodSearch(e) {
     e.preventDefault()
-    setNeighborhood(neighborhoodInput.trim())
-    setPage(1)
+    resetAndApply({ neighborhood: neighborhoodInput.trim() })
+  }
+
+  function handleSearch(e) {
+    e.preventDefault()
+    resetAndApply({ q: qInput.trim() })
+  }
+
+  function clearNeighborhood() {
+    setNeighborhoodInput('')
+    resetAndApply({ neighborhood: '' })
+  }
+
+  function clearSearch() {
+    setQInput('')
+    resetAndApply({ q: '' })
   }
 
   return (
     <div className="min-h-screen">
       <div className="max-w-2xl mx-auto px-4 py-10">
-
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Feed da comunidade</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-1">Feed da comunidade</h1>
           <p className="text-sm text-gray-400">Pimenta Bueno — RO</p>
         </div>
 
         <div className="mb-6 flex flex-col gap-3">
+          {/* Busca textual */}
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Buscar posts..."
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
+              className="flex-1 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button type="submit" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              Buscar
+            </button>
+            {q && (
+              <button type="button" onClick={clearSearch} className="text-sm px-3 py-2 text-gray-400 hover:text-gray-600 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+                ×
+              </button>
+            )}
+          </form>
+
+          {/* Filtros de categoria */}
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => (
               <button
@@ -60,64 +125,40 @@ export default function Feed() {
                 className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
                   category === c
                     ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
+                    : 'bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
                 }`}
               >
                 {CATEGORY_LABELS[c]}
               </button>
             ))}
             {category && (
-              <button
-                onClick={() => { setCategory(''); setPage(1) }}
-                className="text-sm px-3 py-1.5 rounded-full text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => resetAndApply({ category: '' })} className="text-sm px-3 py-1.5 rounded-full text-gray-400 hover:text-gray-600">
                 × limpar
               </button>
             )}
           </div>
 
+          {/* Filtro por bairro */}
           <form onSubmit={handleNeighborhoodSearch} className="flex gap-2">
             <input
               type="text"
               placeholder="Filtrar por bairro..."
               value={neighborhoodInput}
               onChange={(e) => setNeighborhoodInput(e.target.value)}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <button
-              type="submit"
-              className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Buscar
+            <button type="submit" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              Filtrar
             </button>
             {neighborhood && (
-              <button
-                type="button"
-                onClick={() => { setNeighborhood(''); setNeighborhoodInput(''); setPage(1) }}
-                className="text-sm px-3 py-2 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg bg-white"
-              >
+              <button type="button" onClick={clearNeighborhood} className="text-sm px-3 py-2 text-gray-400 hover:text-gray-600 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                 ×
               </button>
             )}
           </form>
         </div>
 
-        {loading && (
-          <div className="flex flex-col gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
-                <div className="h-4 bg-gray-100 rounded w-1/4 mb-3" />
-                <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-100 rounded w-full mb-1" />
-                <div className="h-3 bg-gray-100 rounded w-2/3" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {error && (
-          <div className="text-center py-16 text-red-400 text-sm">{error}</div>
-        )}
+        {error && <div className="text-center py-16 text-red-400 text-sm">{error}</div>}
 
         {!loading && !error && posts.length === 0 && (
           <div className="text-center py-16">
@@ -132,15 +173,25 @@ export default function Feed() {
           {posts.map((p) => <PostCard key={p.id} post={p} />)}
         </div>
 
-        {posts.length === 20 && (
-          <div className="flex justify-center mt-8">
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              className="text-sm text-blue-600 border border-blue-200 px-5 py-2 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              Carregar mais
-            </button>
+        {/* Skeleton loader */}
+        {loading && (
+          <div className="flex flex-col gap-4 mt-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 animate-pulse">
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/4 mb-3" />
+                <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full mb-1" />
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
+              </div>
+            ))}
           </div>
+        )}
+
+        {/* Sentinel para infinite scroll */}
+        <div ref={sentinelRef} className="h-4" />
+
+        {!hasMore && posts.length > 0 && (
+          <p className="text-center text-xs text-gray-400 mt-4">Todos os posts carregados.</p>
         )}
       </div>
     </div>
