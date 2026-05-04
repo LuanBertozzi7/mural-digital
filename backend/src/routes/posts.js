@@ -31,7 +31,7 @@ export default async function postsRoutes(fastify) {
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      include: { user: { select: { name: true } } }
+      include: { user: { select: { name: true, avatarUrl: true } } }
     })
 
     return posts.map((p) => ({
@@ -42,6 +42,8 @@ export default async function postsRoutes(fastify) {
       neighborhood: p.neighborhood,
       status: p.status,
       author: p.user?.name ?? 'Anônimo',
+      authorAvatar: p.user?.avatarUrl ?? null,
+      editedAt: p.editedAt,
       createdAt: p.createdAt
     }))
   })

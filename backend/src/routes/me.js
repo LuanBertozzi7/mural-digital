@@ -8,6 +8,7 @@ const avatarsDir = join(__dirname, '..', '..', 'uploads', 'avatars')
 if (!existsSync(avatarsDir)) mkdirSync(avatarsDir, { recursive: true })
 
 const PROFILE_SELECT = { id: true, name: true, email: true, role: true, neighborhood: true, avatarUrl: true }
+const VALID_CATEGORIES = ['VAGAS', 'PERDIDOS', 'PROBLEMAS', 'AVISOS', 'EVENTOS', 'COMPRAS']
 
 export default async function meRoutes(fastify) {
   fastify.get('/api/me/posts', {
@@ -17,6 +18,51 @@ export default async function meRoutes(fastify) {
       where: { userId: req.user.userId },
       orderBy: { createdAt: 'desc' }
     })
+  })
+
+  fastify.patch('/api/me/posts/:id', {
+    onRequest: [fastify.authenticate],
+    schema: {
+      params: { type: 'object', properties: { id: { type: 'integer' } } },
+      body: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', minLength: 1, maxLength: 200 },
+          description: { type: 'string', minLength: 1, maxLength: 2000 },
+          category: { type: 'string', enum: VALID_CATEGORIES },
+          neighborhood: { type: 'string', minLength: 1, maxLength: 100 }
+        }
+      }
+    }
+  }, async (req, reply) => {
+    const id = Number(req.params.id)
+    const post = await fastify.prisma.post.findUnique({ where: { id } })
+    if (!post) return reply.code(404).send({ error: 'post não encontrado' })
+    if (post.userId !== req.user.userId) return reply.code(403).send({ error: 'forbidden' })
+
+    const { title, description, category, neighborhood } = req.body
+    const data = { editedAt: new Date(), status: 'PENDING' }
+    if (title !== undefined) data.title = title
+    if (description !== undefined) data.description = description
+    if (category !== undefined) data.category = category
+    if (neighborhood !== undefined) data.neighborhood = neighborhood
+
+    return fastify.prisma.post.update({ where: { id }, data })
+  })
+
+  fastify.delete('/api/me/posts/:id', {
+    onRequest: [fastify.authenticate],
+    schema: {
+      params: { type: 'object', properties: { id: { type: 'integer' } } }
+    }
+  }, async (req, reply) => {
+    const id = Number(req.params.id)
+    const post = await fastify.prisma.post.findUnique({ where: { id } })
+    if (!post) return reply.code(404).send({ error: 'post não encontrado' })
+    if (post.userId !== req.user.userId) return reply.code(403).send({ error: 'forbidden' })
+
+    await fastify.prisma.post.delete({ where: { id } })
+    return reply.code(204).send()
   })
 
   fastify.get('/api/me/profile', {
