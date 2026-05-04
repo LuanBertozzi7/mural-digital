@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
 import prismaPlugin from './plugins/prisma.js'
 import authPlugin from './plugins/auth.js'
 import healthRoutes from './routes/health.js'
@@ -11,6 +12,7 @@ import adminRoutes from './routes/admin.js'
 
 const fastify = Fastify({ logger: true })
 
+await fastify.register(helmet, { contentSecurityPolicy: false })
 await fastify.register(cors, {
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE']
