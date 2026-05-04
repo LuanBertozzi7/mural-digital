@@ -23,7 +23,10 @@ const fastify = Fastify({
     : { transport: { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:HH:MM:ss', ignore: 'pid,hostname' } } }
 })
 
-await fastify.register(helmet, { contentSecurityPolicy: false })
+await fastify.register(helmet, {
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+})
 await fastify.register(multipart)
 await fastify.register(staticFiles, {
   root: join(__dirname, '..', 'uploads'),
