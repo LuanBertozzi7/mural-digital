@@ -17,9 +17,7 @@ export default function Feed() {
   const [error, setError] = useState(null)
 
   const [category, setCategory] = useState('')
-  const [neighborhood, setNeighborhood] = useState('')
   const [q, setQ] = useState('')
-  const [neighborhoodInput, setNeighborhoodInput] = useState('')
   const [qInput, setQInput] = useState('')
 
   const sentinelRef = useRef(null)
@@ -30,7 +28,6 @@ export default function Feed() {
     setError(null)
     const params = new URLSearchParams({ page })
     if (category) params.set('category', category)
-    if (neighborhood) params.set('neighborhood', neighborhood)
     if (q) params.set('q', q)
 
     apiFetch(`/api/posts?${params}`)
@@ -60,7 +57,6 @@ export default function Feed() {
     setHasMore(true)
     setPage(1)
     if ('category' in changes) setCategory(changes.category)
-    if ('neighborhood' in changes) setNeighborhood(changes.neighborhood)
     if ('q' in changes) setQ(changes.q)
   }
 
@@ -68,19 +64,9 @@ export default function Feed() {
     resetAndApply({ category: category === c ? '' : c })
   }
 
-  function handleNeighborhoodSearch(e) {
-    e.preventDefault()
-    resetAndApply({ neighborhood: neighborhoodInput.trim() })
-  }
-
   function handleSearch(e) {
     e.preventDefault()
     resetAndApply({ q: qInput.trim() })
-  }
-
-  function clearNeighborhood() {
-    setNeighborhoodInput('')
-    resetAndApply({ neighborhood: '' })
   }
 
   function clearSearch() {
@@ -97,11 +83,11 @@ export default function Feed() {
         </div>
 
         <div className="mb-6 flex flex-col gap-3">
-          {/* Busca textual */}
+          {/* Busca */}
           <form onSubmit={handleSearch} className="flex gap-2">
             <input
               type="text"
-              placeholder="Buscar posts..."
+              placeholder="Buscar por título, descrição ou bairro..."
               value={qInput}
               onChange={(e) => setQInput(e.target.value)}
               className="flex-1 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -138,24 +124,6 @@ export default function Feed() {
             )}
           </div>
 
-          {/* Filtro por bairro */}
-          <form onSubmit={handleNeighborhoodSearch} className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Filtrar por bairro..."
-              value={neighborhoodInput}
-              onChange={(e) => setNeighborhoodInput(e.target.value)}
-              className="flex-1 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button type="submit" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Filtrar
-            </button>
-            {neighborhood && (
-              <button type="button" onClick={clearNeighborhood} className="text-sm px-3 py-2 text-gray-400 hover:text-gray-600 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                ×
-              </button>
-            )}
-          </form>
         </div>
 
         {error && <div className="text-center py-16 text-red-400 text-sm">{error}</div>}

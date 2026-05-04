@@ -22,7 +22,8 @@ export default async function postsRoutes(fastify) {
     if (neighborhood) where.neighborhood = { contains: neighborhood, mode: 'insensitive' }
     if (q) where.OR = [
       { title: { contains: q, mode: 'insensitive' } },
-      { description: { contains: q, mode: 'insensitive' } }
+      { description: { contains: q, mode: 'insensitive' } },
+      { neighborhood: { contains: q, mode: 'insensitive' } }
     ]
 
     const posts = await fastify.prisma.post.findMany({
