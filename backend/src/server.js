@@ -2,6 +2,12 @@ import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
+import multipart from '@fastify/multipart'
+import staticFiles from '@fastify/static'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 import prismaPlugin from './plugins/prisma.js'
 import authPlugin from './plugins/auth.js'
 import healthRoutes from './routes/health.js'
@@ -18,6 +24,11 @@ const fastify = Fastify({
 })
 
 await fastify.register(helmet, { contentSecurityPolicy: false })
+await fastify.register(multipart)
+await fastify.register(staticFiles, {
+  root: join(__dirname, '..', 'uploads'),
+  prefix: '/uploads/'
+})
 await fastify.register(cors, {
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE']
