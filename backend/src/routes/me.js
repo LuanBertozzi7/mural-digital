@@ -1,5 +1,18 @@
-import { createWriteStream, mkdirSync, existsSync, unlinkSync } from 'fs'
-import { pipeline } from 'stream/promises'
+/**
+ * Rotas do usuário autenticado (/api/me/*).
+ *
+ * Todas as rotas exigem JWT válido (fastify.authenticate).
+ *
+ *  GET    /api/me/profile       → retorna perfil do usuário logado
+ *  PATCH  /api/me/profile       → atualiza nome e bairro
+ *  POST   /api/me/avatar        → faz upload de foto de perfil (máx. 2 MB)
+ *  GET    /api/me/posts         → lista posts do usuário logado
+ *  PATCH  /api/me/posts/:id     → edita post próprio (recoloca em PENDING)
+ *  DELETE /api/me/posts/:id     → remove post próprio
+ */
+
+import { mkdirSync, existsSync, unlinkSync } from 'fs'
+import { writeFile } from 'fs/promises'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -9,6 +22,27 @@ if (!existsSync(avatarsDir)) mkdirSync(avatarsDir, { recursive: true })
 
 const PROFILE_SELECT = { id: true, name: true, email: true, role: true, neighborhood: true, avatarUrl: true }
 const VALID_CATEGORIES = ['VAGAS', 'PERDIDOS', 'PROBLEMAS', 'AVISOS', 'EVENTOS', 'COMPRAS']
+
+/**
+ * Verifica a assinatura binária (magic bytes) do buffer para confirmar
+ * que o arquivo é de fato um dos formatos de imagem suportados.
+ *
+ * O MIME type enviado pelo cliente NÃO pode ser confiado isoladamente —
+ * qualquer arquivo pode ser renomeado com extensão de imagem. Checar os
+ * primeiros bytes é a única forma confiável de validar o tipo real do arquivo.
+ */
+function hasValidImageSignature(buf) {
+  if (buf.length < 12) return false
+  if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return true // JPEG
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) return true // PNG
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38) return true // GIF
+  // WebP é um container RIFF: bytes 0-3 = "RIFF", bytes 8-11 = "WEBP"
+  if (
+    buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+    buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50
+  ) return true
+  return false
+}
 
 export default async function meRoutes(fastify) {
   fastify.get('/api/me/posts', {
@@ -27,9 +61,9 @@ export default async function meRoutes(fastify) {
       body: {
         type: 'object',
         properties: {
-          title: { type: 'string', minLength: 1, maxLength: 200 },
-          description: { type: 'string', minLength: 1, maxLength: 2000 },
-          category: { type: 'string', enum: VALID_CATEGORIES },
+          title:        { type: 'string', minLength: 1, maxLength: 200 },
+          description:  { type: 'string', minLength: 1, maxLength: 2000 },
+          category:     { type: 'string', enum: VALID_CATEGORIES },
           neighborhood: { type: 'string', minLength: 1, maxLength: 100 }
         }
       }
@@ -41,10 +75,13 @@ export default async function meRoutes(fastify) {
     if (post.userId !== req.user.userId) return reply.code(403).send({ error: 'forbidden' })
 
     const { title, description, category, neighborhood } = req.body
+
+    // Editar um post recoloca-o em PENDING para nova moderação, evitando que
+    // conteúdo aprovado seja alterado para algo inapropriado sem revisão.
     const data = { editedAt: new Date(), status: 'PENDING' }
-    if (title !== undefined) data.title = title
-    if (description !== undefined) data.description = description
-    if (category !== undefined) data.category = category
+    if (title !== undefined)        data.title = title
+    if (description !== undefined)  data.description = description
+    if (category !== undefined)     data.category = category
     if (neighborhood !== undefined) data.neighborhood = neighborhood
 
     return fastify.prisma.post.update({ where: { id }, data })
@@ -80,7 +117,7 @@ export default async function meRoutes(fastify) {
       body: {
         type: 'object',
         properties: {
-          name: { type: 'string', minLength: 1, maxLength: 100 },
+          name:         { type: 'string', minLength: 1, maxLength: 100 },
           neighborhood: { type: 'string', maxLength: 100 }
         }
       }
@@ -88,7 +125,7 @@ export default async function meRoutes(fastify) {
   }, async (req) => {
     const { name, neighborhood } = req.body
     const data = {}
-    if (name !== undefined) data.name = name
+    if (name !== undefined)         data.name = name
     if (neighborhood !== undefined) data.neighborhood = neighborhood
 
     return fastify.prisma.user.update({
@@ -110,16 +147,35 @@ export default async function meRoutes(fastify) {
       return reply.code(400).send({ error: 'formato não suportado. Use JPG, PNG, WebP ou GIF' })
     }
 
+    // Coleta o arquivo inteiro em memória antes de gravar no disco.
+    // Necessário para: (1) detectar truncamento por limite de tamanho,
+    // e (2) validar a assinatura binária antes de qualquer escrita.
+    let truncated = false
+    const chunks = []
+    file.file.on('limit', () => { truncated = true })
+    for await (const chunk of file.file) chunks.push(chunk)
+
+    if (truncated) {
+      return reply.code(413).send({ error: 'arquivo muito grande. Máximo 2 MB' })
+    }
+
+    const buffer = Buffer.concat(chunks)
+
+    if (!hasValidImageSignature(buffer)) {
+      return reply.code(400).send({ error: 'o arquivo enviado não é uma imagem válida' })
+    }
+
     const ext = file.mimetype === 'image/jpeg' ? 'jpg' : file.mimetype.split('/')[1]
     const userId = req.user.userId
 
-    // Remove avatar anterior (qualquer extensão)
+    // Remove avatar anterior em qualquer extensão antes de gravar o novo,
+    // evitando arquivos órfãos caso o formato mude entre uploads.
     for (const e of ['jpg', 'png', 'webp', 'gif']) {
       try { unlinkSync(join(avatarsDir, `${userId}.${e}`)) } catch {}
     }
 
     const filename = `${userId}.${ext}`
-    await pipeline(file.file, createWriteStream(join(avatarsDir, filename)))
+    await writeFile(join(avatarsDir, filename), buffer)
 
     const avatarUrl = `/uploads/avatars/${filename}`
     await fastify.prisma.user.update({ where: { id: userId }, data: { avatarUrl } })

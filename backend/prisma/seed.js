@@ -1,3 +1,16 @@
+/**
+ * Script de seed do banco de dados.
+ *
+ * Cria o usuário administrador inicial a partir das variáveis de ambiente:
+ *   ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME
+ *
+ * Seguro para rodar múltiplas vezes — verifica se o admin já existe antes de criar.
+ *
+ * Uso:
+ *   node prisma/seed.js
+ *   npm run prisma:seed
+ */
+
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
