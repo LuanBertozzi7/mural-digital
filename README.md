@@ -1,11 +1,62 @@
 # Mural Digital
 
-Plataforma comunitária para moradores de Pimenta Bueno - RO publicarem postagens locais: vagas de emprego, objetos perdidos, problemas urbanos, avisos, eventos e compras. As postagens são filtradas por categoria e bairro e passam por moderação antes de aparecerem no feed.
+Plataforma comunitária de avisos para moradores de Pimenta Bueno — RO. Publique vagas de emprego, objetos perdidos, problemas urbanos, eventos, avisos e anúncios de compra. As postagens passam por moderação antes de aparecerem no feed público.
+
+## Funcionalidades
+
+- Feed com busca por texto e filtro por categoria
+- Publicação anônima ou autenticada
+- Moderação de posts pelo administrador
+- Perfil com foto de avatar
+- Recuperação de senha por e-mail
+- Dark mode com preferência salva
+- Deploy em container único (frontend + API juntos)
 
 ## Stack
 
-- **Backend:** Node.js 20 · Fastify 5 · Prisma 6 · PostgreSQL 16
-- **Frontend:** React 19 · Vite · React Router · Tailwind CSS 4
+| Camada | Tecnologias |
+|---|---|
+| Backend | Node.js 20 · Fastify 5 · Prisma 6 · PostgreSQL 16 |
+| Frontend | React 19 · Vite · React Router · Tailwind CSS 4 |
+| Infra | Docker / Podman · nodemailer (SMTP) |
+
+---
+
+## Rodando com Docker
+
+A forma mais simples de subir o projeto completo (frontend + backend + banco):
+
+```bash
+git clone https://github.com/LuanBertozzi7/mural-digital.git
+cd mural-digital
+```
+
+Crie um arquivo `.env` na raiz com as variáveis obrigatórias:
+
+```env
+JWT_SECRET=string-aleatoria-de-pelo-menos-32-caracteres
+FRONTEND_URL=http://localhost:3003
+
+# SMTP para recuperação de senha (opcional em dev)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=seu@email.com
+SMTP_PASS=sua-senha-de-app
+SMTP_FROM=Mural Digital <noreply@seudominio.com>
+```
+
+Suba os containers:
+
+```bash
+docker compose up -d       # Docker
+# ou
+podman compose up -d       # Podman
+```
+
+A aplicação fica disponível em `http://localhost:3003`.
+
+> **Sem SMTP configurado:** o link de reset de senha é impresso no log do container (`docker compose logs app`).
 
 ---
 
@@ -14,17 +65,9 @@ Plataforma comunitária para moradores de Pimenta Bueno - RO publicarem postagen
 ### Pré-requisitos
 
 - Node.js 20+
-- PostgreSQL 16 (local ou via Docker/Podman)
+- PostgreSQL 16 (local ou via container)
 
 ### 1. Banco de dados
-
-Com Docker:
-
-```bash
-docker compose up -d
-```
-
-Com Podman:
 
 ```bash
 podman run -d --name mural-postgres \
@@ -38,14 +81,12 @@ podman run -d --name mural-postgres \
 
 ```bash
 cd backend
-cp .env.example .env
+cp .env.example .env   # edite as variáveis necessárias
 npm install
 npx prisma migrate dev
-node prisma/seed.js
-npm run dev
+node prisma/seed.js    # cria o usuário admin
+npm run dev            # http://localhost:3000
 ```
-
-O servidor sobe em `http://localhost:3000`.
 
 ### 3. Frontend
 
@@ -53,28 +94,23 @@ O servidor sobe em `http://localhost:3000`.
 cd frontend
 cp .env.example .env
 npm install
-npm run dev
+npm run dev            # http://localhost:5173
 ```
-
-A interface sobe em `http://localhost:5173`.
 
 ---
 
-## Deploy na VPS (Rocky Linux 9)
+## Deploy em VPS (sem Docker)
 
-### Pré-requisitos
+### Pré-requisitos no servidor (Rocky Linux 9 / Ubuntu)
 
 ```bash
 # Node.js 20
 curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
 sudo dnf install -y nodejs
 
-# PM2
+# PM2 + Nginx
 sudo npm install -g pm2
-
-# Nginx
-sudo dnf install -y nginx
-sudo systemctl enable --now nginx
+sudo dnf install -y nginx && sudo systemctl enable --now nginx
 
 # PostgreSQL 16
 sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
@@ -89,41 +125,37 @@ sudo -u postgres psql -c "CREATE DATABASE mural OWNER mural;"
 
 ### Variáveis de ambiente
 
-**`backend/.env`** (produção):
+**`backend/.env`**:
 
 ```env
 DATABASE_URL="postgresql://mural:senha-forte@localhost:5432/mural"
 JWT_SECRET="string-aleatoria-longa-e-segura"
-ADMIN_EMAIL="seu@email.com"
+ADMIN_EMAIL="admin@seudominio.com"
 ADMIN_PASSWORD="senha-forte-do-admin"
 ADMIN_NAME="Administrador"
 PORT=3000
 CORS_ORIGIN="https://seudominio.com"
+FRONTEND_URL="https://seudominio.com"
 NODE_ENV=production
 ```
 
-**`frontend/.env`** (produção):
+**`frontend/.env`**:
 
 ```env
 VITE_API_URL=https://seudominio.com
 ```
 
-### Deploy
+### Primeiro deploy
 
 ```bash
 git clone https://github.com/LuanBertozzi7/mural-digital.git /var/www/mural-digital
-cd /var/www/mural-digital
-
-# Backend
-cd backend
+cd /var/www/mural-digital/backend
 npm install --omit=dev
 npx prisma migrate deploy
 node prisma/seed.js
 pm2 start src/server.js --name mural-api
-pm2 save
-pm2 startup   # siga as instruções exibidas pelo comando
+pm2 save && pm2 startup
 
-# Frontend (build estático)
 cd ../frontend
 npm install
 npm run build
@@ -131,7 +163,7 @@ npm run build
 
 ### Nginx
 
-Crie `/etc/nginx/conf.d/mural.conf`:
+`/etc/nginx/conf.d/mural.conf`:
 
 ```nginx
 server {
@@ -162,59 +194,39 @@ server {
 
 ```bash
 sudo nginx -t && sudo systemctl reload nginx
-```
 
-### HTTPS
-
-```bash
+# HTTPS
 sudo dnf install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d seudominio.com
 ```
 
-### Atualizacoes
+### Atualizações
 
 ```bash
-cd /var/www/mural-digital
-git pull
-
-cd backend
-npm install --omit=dev
-npx prisma migrate deploy
-pm2 restart mural-api
-
-cd ../frontend
-npm run build
+cd /var/www/mural-digital && git pull
+cd backend && npm install --omit=dev && npx prisma migrate deploy && pm2 restart mural-api
+cd ../frontend && npm run build
 ```
 
 ---
 
 ## Como contribuir
 
-O projeto e aberto a contribuicoes. Qualquer pessoa pode ajudar, independente do nivel de experiencia.
+O projeto é aberto a contribuições de qualquer nível.
 
-### Reportando problemas
+**Reportando problemas:** abra uma issue descrevendo o que aconteceu, o que era esperado e como reproduzir.
 
-Encontrou um bug ou tem uma sugestao? Abra uma issue no GitHub descrevendo:
+**Enviando código:**
 
-- O que aconteceu e o que era esperado
-- Passos para reproduzir (se for bug)
-- Versao do Node.js e sistema operacional
+1. Fork o repositório
+2. Crie uma branch a partir de `main` (`git checkout -b minha-feature`)
+3. Faça commits com mensagens claras seguindo [Conventional Commits](https://www.conventionalcommits.org/)
+4. Abra um pull request descrevendo a mudança
 
-### Enviando codigo
-
-1. Faca um fork do repositorio
-2. Crie uma branch a partir de `main` com um nome descritivo (`git checkout -b minha-feature`)
-3. Faca as alteracoes e commits com mensagens claras
-4. Abra um pull request descrevendo o que foi feito e por que
-
-### Boas praticas
-
-- Mantenha o escopo das mudancas pequeno e focado
-- Se a mudanca for grande ou arquitetural, abra uma issue primeiro para discutir antes de codar
-- Teste localmente antes de enviar o PR
+Se a alteração for grande ou arquitetural, abra uma issue primeiro para alinhar antes de implementar.
 
 ---
 
-## Licenca
+## Licença
 
 MIT
