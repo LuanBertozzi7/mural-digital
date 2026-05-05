@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch, BASE } from '../api'
 import { isLoggedIn, getUser } from '../auth'
+import { useToast } from '../context/ToastContext'
 
 const INPUT = 'w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow'
 const LABEL = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5'
@@ -12,8 +13,8 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [success, setSuccess] = useState(false)
   const [error, setError] = useState(null)
+  const toast = useToast()
   const [avatarPreview, setAvatarPreview] = useState(null)
   const fileInputRef = useRef(null)
   const navigate = useNavigate()
@@ -66,7 +67,6 @@ export default function Profile() {
     e.preventDefault()
     setSaving(true)
     setError(null)
-    setSuccess(false)
     try {
       const updated = await apiFetch('/api/me/profile', {
         method: 'PATCH',
@@ -76,7 +76,7 @@ export default function Profile() {
       const user = getUser()
       localStorage.setItem('user', JSON.stringify({ ...user, name: updated.name }))
       window.dispatchEvent(new Event('userUpdated'))
-      setSuccess(true)
+      toast('Perfil atualizado com sucesso.')
     } catch (e) {
       setError(e.message)
     } finally {
@@ -150,12 +150,6 @@ export default function Profile() {
             {error}
           </div>
         )}
-        {success && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 rounded-xl px-4 py-3 text-sm mb-5 flex items-center gap-2">
-            <span>✓</span> Perfil atualizado com sucesso.
-          </div>
-        )}
-
         <form onSubmit={handleSave} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm flex flex-col gap-5">
           <div>
             <label className={LABEL}>Nome</label>

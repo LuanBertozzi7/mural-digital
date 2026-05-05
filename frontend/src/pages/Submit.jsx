@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiFetch } from '../api'
 import { isLoggedIn, getUser } from '../auth'
+import { useToast } from '../context/ToastContext'
 
 const CATEGORIES = ['VAGAS', 'PERDIDOS', 'PROBLEMAS', 'AVISOS', 'EVENTOS', 'COMPRAS']
 const CATEGORY_LABELS = {
@@ -16,8 +17,8 @@ const LABEL = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5
 export default function Submit() {
   const [form, setForm] = useState(EMPTY)
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
   const [error, setError] = useState(null)
+  const toast = useToast()
 
   const user = getUser()
   const authorLabel = isLoggedIn() && user ? user.name : 'Anônimo'
@@ -30,11 +31,10 @@ export default function Submit() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    setSuccess(false)
     try {
       await apiFetch('/api/posts', { method: 'POST', body: JSON.stringify(form) })
-      setSuccess(true)
       setForm(EMPTY)
+      toast('Post enviado! Aguarde a aprovação de um moderador.')
     } catch (e) {
       setError(e.message)
     } finally {
@@ -51,16 +51,6 @@ export default function Submit() {
             Publicando como <span className="font-medium text-gray-600 dark:text-gray-300">{authorLabel}</span>
           </p>
         </div>
-
-        {success && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 rounded-xl px-4 py-4 text-sm mb-6 flex items-start gap-3">
-            <span className="mt-0.5">✓</span>
-            <div>
-              <p className="font-medium">Post enviado!</p>
-              <p className="mt-0.5 opacity-80">Aguarde a aprovação de um moderador para aparecer no feed.</p>
-            </div>
-          </div>
-        )}
 
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl px-4 py-3 text-sm mb-6">
