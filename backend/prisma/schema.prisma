@@ -58,6 +58,7 @@ model Post {
   status       PostStatus @default(PENDING)
   userId       Int?
   user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  contact      String?
   editedAt     DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

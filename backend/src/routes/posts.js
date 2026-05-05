@@ -80,6 +80,7 @@ export default async function postsRoutes(fastify) {
       description:  post.description,
       category:     post.category,
       neighborhood: post.neighborhood,
+      contact:      post.contact ?? null,
       author:       post.user?.name ?? 'Anônimo',
       authorAvatar: post.user?.avatarUrl ?? null,
       editedAt:     post.editedAt,
@@ -97,18 +98,18 @@ export default async function postsRoutes(fastify) {
           title:        { type: 'string', minLength: 1, maxLength: 200 },
           description:  { type: 'string', minLength: 1, maxLength: 2000 },
           category:     { type: 'string', enum: VALID_CATEGORIES },
-          neighborhood: { type: 'string', minLength: 1, maxLength: 100 }
+          neighborhood: { type: 'string', minLength: 1, maxLength: 100 },
+          contact:      { type: 'string', maxLength: 100 }
         }
       }
     }
   }, async (req, reply) => {
-    const { title, description, category, neighborhood } = req.body
+    const { title, description, category, neighborhood, contact } = req.body
 
-    // Posts anônimos têm userId null; posts autenticados ficam vinculados ao autor.
     const userId = req.user?.userId ?? null
 
     const post = await fastify.prisma.post.create({
-      data: { title, description, category, neighborhood, userId }
+      data: { title, description, category, neighborhood, userId, contact: contact?.trim() || null }
     })
 
     return reply.code(201).send(post)

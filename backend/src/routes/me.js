@@ -64,7 +64,8 @@ export default async function meRoutes(fastify) {
           title:        { type: 'string', minLength: 1, maxLength: 200 },
           description:  { type: 'string', minLength: 1, maxLength: 2000 },
           category:     { type: 'string', enum: VALID_CATEGORIES },
-          neighborhood: { type: 'string', minLength: 1, maxLength: 100 }
+          neighborhood: { type: 'string', minLength: 1, maxLength: 100 },
+          contact:      { type: 'string', maxLength: 100 }
         }
       }
     }
@@ -74,15 +75,14 @@ export default async function meRoutes(fastify) {
     if (!post) return reply.code(404).send({ error: 'post não encontrado' })
     if (post.userId !== req.user.userId) return reply.code(403).send({ error: 'forbidden' })
 
-    const { title, description, category, neighborhood } = req.body
+    const { title, description, category, neighborhood, contact } = req.body
 
-    // Editar um post recoloca-o em PENDING para nova moderação, evitando que
-    // conteúdo aprovado seja alterado para algo inapropriado sem revisão.
     const data = { editedAt: new Date(), status: 'PENDING' }
     if (title !== undefined)        data.title = title
     if (description !== undefined)  data.description = description
     if (category !== undefined)     data.category = category
     if (neighborhood !== undefined) data.neighborhood = neighborhood
+    if (contact !== undefined)      data.contact = contact?.trim() || null
 
     return fastify.prisma.post.update({ where: { id }, data })
   })

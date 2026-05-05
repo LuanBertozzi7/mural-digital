@@ -37,7 +37,7 @@ export default function MyPosts() {
 
   function startEdit(post) {
     setEditingId(post.id)
-    setEditForm({ title: post.title, description: post.description, category: post.category, neighborhood: post.neighborhood })
+    setEditForm({ title: post.title, description: post.description, category: post.category, neighborhood: post.neighborhood, contact: post.contact ?? '' })
   }
 
   async function handleSaveEdit(id) {
@@ -115,6 +115,10 @@ export default function MyPosts() {
                       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bairro</label>
                       <input value={editForm.neighborhood} onChange={(e) => setEditForm((f) => ({ ...f, neighborhood: e.target.value }))} className={INPUT} maxLength={100} />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Contato <span className="text-gray-400 font-normal">(opcional)</span></label>
+                    <input value={editForm.contact ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, contact: e.target.value }))} maxLength={100} placeholder="WhatsApp ou e-mail" className={INPUT} />
                   </div>
                   <p className="text-xs text-amber-600 dark:text-amber-400">Editar vai enviar o post para moderação novamente.</p>
                   <div className="flex gap-2">

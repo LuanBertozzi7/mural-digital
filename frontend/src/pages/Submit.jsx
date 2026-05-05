@@ -9,7 +9,7 @@ const CATEGORY_LABELS = {
   AVISOS: 'Avisos', EVENTOS: 'Eventos', COMPRAS: 'Compras',
 }
 
-const EMPTY = { title: '', description: '', category: 'AVISOS', neighborhood: '' }
+const EMPTY = { title: '', description: '', category: 'AVISOS', neighborhood: '', contact: '' }
 
 const INPUT = 'w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow'
 const LABEL = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5'
@@ -80,6 +80,21 @@ export default function Submit() {
               <label className={LABEL}>Bairro</label>
               <input name="neighborhood" value={form.neighborhood} onChange={handleChange} required maxLength={100} placeholder="Ex: Centro" className={INPUT} />
             </div>
+          </div>
+
+          <div>
+            <label className={LABEL}>
+              Contato <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <input
+              name="contact"
+              value={form.contact}
+              onChange={handleChange}
+              maxLength={100}
+              placeholder="WhatsApp (ex: 69999991234) ou e-mail"
+              className={INPUT}
+            />
+            <p className="text-xs text-gray-400 mt-1.5">Aparece apenas na página do post, não no feed.</p>
           </div>
 
           <button type="submit" disabled={loading} className="bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1">
