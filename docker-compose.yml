@@ -2,26 +2,45 @@ services:
   postgres:
     image: postgres:16
     container_name: mural_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: mural
       POSTGRES_PASSWORD: mural
       POSTGRES_DB: mural
-    ports:
-      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mural -d mural"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   app:
     build:
       context: .
       dockerfile: dockerfile
     container_name: mural_app
+    restart: unless-stopped
     ports:
       - "3003:3003"
     environment:
-      DATABASE_URL: "postgresql://mural:mural@postgres:5432/mural"
+      NODE_ENV: production
+      PORT: 3003
+      DATABASE_URL: postgresql://mural:mural@postgres:5432/mural
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3003}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    volumes:
+      - uploads_data:/app/backend/uploads/avatars
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  uploads_data:

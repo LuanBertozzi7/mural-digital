@@ -76,8 +76,21 @@ await fastify.register(multipart)
 // via `location /uploads/` para melhor desempenho.
 await fastify.register(staticFiles, {
   root: join(__dirname, '..', 'uploads'),
-  prefix: '/uploads/'
+  prefix: '/uploads/',
 })
+
+// Em produção, serve o build do React e usa index.html como fallback para
+// client-side routing. Registrado antes das rotas de API para que os assets
+// estáticos (JS/CSS) sejam resolvidos corretamente.
+if (isProd) {
+  const publicDir = join(__dirname, '..', 'public')
+  await fastify.register(staticFiles, {
+    root: publicDir,
+    prefix: '/',
+    wildcard: false,
+    decorateReply: false,
+  })
+}
 
 await fastify.register(cors, {
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
@@ -92,6 +105,16 @@ await fastify.register(postsRoutes)
 await fastify.register(authRoutes)
 await fastify.register(meRoutes)
 await fastify.register(adminRoutes)
+
+if (isProd) {
+  const publicDir = join(__dirname, '..', 'public')
+  fastify.setNotFoundHandler(async (req, reply) => {
+    if (req.url.startsWith('/api/') || req.url.startsWith('/uploads/')) {
+      return reply.code(404).send({ error: 'Not Found' })
+    }
+    return reply.sendFile('index.html', publicDir)
+  })
+}
 
 const port = Number(process.env.PORT) || 3000
 await fastify.listen({ port, host: '0.0.0.0' })
