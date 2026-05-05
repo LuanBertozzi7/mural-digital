@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../api'
 import PostCard from '../components/PostCard'
 
@@ -16,14 +16,18 @@ export default function Feed() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  const [searchParams, setSearchParams] = useSearchParams()
   const [category, setCategory] = useState('')
-  const [q, setQ] = useState('')
-  const [qInput, setQInput] = useState('')
-  const [searchFocused, setSearchFocused] = useState(false)
+  const q = searchParams.get('q') || ''
 
   const sentinelRef = useRef(null)
-  const isFirstRender = useRef(true)
-  const searchContainerRef = useRef(null)
+
+  // Reset page quando filtros mudam
+  useEffect(() => {
+    setPosts([])
+    setHasMore(true)
+    setPage(1)
+  }, [q, category])
 
   useEffect(() => {
     setLoading(true)
@@ -41,15 +45,6 @@ export default function Feed() {
       .finally(() => setLoading(false))
   }, [page, category, q])
 
-  // Debounce da busca — dispara 400ms após parar de digitar
-  useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return }
-    const timer = setTimeout(() => {
-      if (qInput.trim() !== q) resetAndApply({ q: qInput.trim() })
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [qInput])
-
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
@@ -60,21 +55,13 @@ export default function Feed() {
     return () => observer.disconnect()
   }, [hasMore, loading])
 
-  function resetAndApply(changes) {
-    setPosts([])
-    setHasMore(true)
-    setPage(1)
-    if ('category' in changes) setCategory(changes.category)
-    if ('q' in changes) setQ(changes.q)
-  }
-
   function handleCategoryClick(c) {
-    resetAndApply({ category: category === c ? '' : c })
+    setCategory((prev) => prev === c ? '' : c)
   }
 
   function clearAll() {
-    setQInput('')
-    resetAndApply({ category: '', q: '' })
+    setCategory('')
+    setSearchParams({})
   }
 
   const hasFilters = category || q
@@ -87,66 +74,24 @@ export default function Feed() {
           <p className="text-sm text-gray-400">Pimenta Bueno</p>
         </div>
 
-        <div className="mb-6" ref={searchContainerRef}>
-          {/* Busca com debounce */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar por título, descrição ou bairro..."
-              value={qInput}
-              onChange={(e) => setQInput(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={(e) => {
-                if (!searchContainerRef.current?.contains(e.relatedTarget)) {
-                  setSearchFocused(false)
-                }
-              }}
-              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg pl-9 pr-9 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            {qInput && (
-              <button
-                type="button"
-                onClick={() => { setQInput(''); resetAndApply({ q: '' }) }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5"
-                aria-label="Limpar busca"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* Filtros — aparecem ao focar na busca */}
-          {(searchFocused || category) && (
-            <div className="flex flex-wrap gap-1 items-center mt-2 animate-slide-down">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleCategoryClick(c)}
-                  className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
-                    category === c
-                      ? 'bg-blue-50 text-blue-600 font-medium dark:bg-blue-900/25 dark:text-blue-400'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {CATEGORY_LABELS[c]}
-                </button>
-              ))}
-              {category && (
-                <button
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={clearAll}
-                  className="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                >
-                  limpar
-                </button>
-              )}
-            </div>
+        <div className="mb-6 flex flex-wrap gap-1 items-center">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => handleCategoryClick(c)}
+              className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                category === c
+                  ? 'bg-blue-50 text-blue-600 font-medium dark:bg-blue-900/25 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              {CATEGORY_LABELS[c]}
+            </button>
+          ))}
+          {category && (
+            <button onClick={clearAll} className="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+              limpar
+            </button>
           )}
         </div>
 

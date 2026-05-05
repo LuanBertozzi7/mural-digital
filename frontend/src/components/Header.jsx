@@ -1,7 +1,55 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { getUser, isLoggedIn, logout } from '../auth'
 import Avatar from './Avatar'
+
+function SearchBar() {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const [searchParams] = useSearchParams()
+  const [value, setValue] = useState(() => searchParams.get('q') || '')
+  const isFirst = useRef(true)
+
+  useEffect(() => {
+    if (isFirst.current) { isFirst.current = false; return }
+    const timer = setTimeout(() => {
+      const q = value.trim()
+      if (pathname === '/') {
+        navigate(q ? `/?q=${encodeURIComponent(q)}` : '/', { replace: true })
+      } else if (q) {
+        navigate(`/?q=${encodeURIComponent(q)}`)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [value])
+
+  function clear() {
+    setValue('')
+    if (pathname === '/') navigate('/', { replace: true })
+  }
+
+  return (
+    <div className="relative w-full max-w-xs">
+      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Pesquisar..."
+        className="w-full bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-gray-300 dark:focus:border-gray-600 rounded-lg pl-8 pr-7 py-1.5 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors"
+      />
+      {value && (
+        <button onClick={clear} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+    </div>
+  )
+}
 
 function NavLink({ to, children, onClick }) {
   const { pathname } = useLocation()
@@ -156,7 +204,9 @@ export default function Header() {
           <NavLink to="/">Feed</NavLink>
           <NavLink to="/submit">Publicar</NavLink>
 
-          <div className="flex-1" />
+          <div className="flex-1 flex justify-center px-4">
+            <SearchBar />
+          </div>
 
           {isLoggedIn() ? (
             <>
@@ -200,7 +250,8 @@ export default function Header() {
 
       {/* Mobile menu dropdown */}
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 flex flex-col gap-1 animate-slide-down">
+        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 flex flex-col gap-2 animate-slide-down">
+          <SearchBar />
           <NavLink to="/" onClick={closeMenu}>Feed</NavLink>
           <NavLink to="/submit" onClick={closeMenu}>Publicar</NavLink>
           {isLoggedIn() ? (
