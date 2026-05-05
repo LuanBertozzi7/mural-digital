@@ -61,6 +61,32 @@ export default async function postsRoutes(fastify) {
     }))
   })
 
+  fastify.get('/api/posts/:id', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'integer' } }
+      }
+    }
+  }, async (req, reply) => {
+    const post = await fastify.prisma.post.findFirst({
+      where: { id: req.params.id, status: 'APPROVED' },
+      include: { user: { select: { name: true, avatarUrl: true } } }
+    })
+    if (!post) return reply.code(404).send({ error: 'Post não encontrado' })
+    return {
+      id:           post.id,
+      title:        post.title,
+      description:  post.description,
+      category:     post.category,
+      neighborhood: post.neighborhood,
+      author:       post.user?.name ?? 'Anônimo',
+      authorAvatar: post.user?.avatarUrl ?? null,
+      editedAt:     post.editedAt,
+      createdAt:    post.createdAt,
+    }
+  })
+
   fastify.post('/api/posts', {
     onRequest: [fastify.optionalAuth],
     schema: {

@@ -54,9 +54,14 @@ export default function Login() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha</label>
             <input name="password" type="password" value={form.password} onChange={handleChange} required className={INPUT} />
           </div>
-          <button type="submit" disabled={loading} className="bg-blue-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1">
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
+          <div className="flex items-center justify-between mt-1">
+            <button type="submit" disabled={loading} className="bg-blue-600 text-white text-sm font-medium py-2.5 px-5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+              {loading ? 'Entrando...' : 'Entrar'}
+            </button>
+            <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-blue-600 transition-colors">
+              Esqueceu a senha?
+            </Link>
+          </div>
         </form>
 
         <p className="text-sm text-gray-400 text-center mt-5">

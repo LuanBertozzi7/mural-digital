@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '../api'
 import PostCard from '../components/PostCard'
@@ -19,10 +19,12 @@ export default function Feed() {
   const [category, setCategory] = useState('')
   const [q, setQ] = useState('')
   const [qInput, setQInput] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
 
   const sentinelRef = useRef(null)
+  const isFirstRender = useRef(true)
+  const searchContainerRef = useRef(null)
 
-  // Load posts — replaces on page=1, appends on page>1
   useEffect(() => {
     setLoading(true)
     setError(null)
@@ -39,14 +41,20 @@ export default function Feed() {
       .finally(() => setLoading(false))
   }, [page, category, q])
 
-  // Intersection observer for infinite scroll
+  // Debounce da busca — dispara 400ms após parar de digitar
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return }
+    const timer = setTimeout(() => {
+      if (qInput.trim() !== q) resetAndApply({ q: qInput.trim() })
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [qInput])
+
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && hasMore && !loading) {
-        setPage((p) => p + 1)
-      }
+      if (entry.isIntersecting && hasMore && !loading) setPage((p) => p + 1)
     }, { rootMargin: '300px' })
     observer.observe(el)
     return () => observer.disconnect()
@@ -64,76 +72,115 @@ export default function Feed() {
     resetAndApply({ category: category === c ? '' : c })
   }
 
-  function handleSearch(e) {
-    e.preventDefault()
-    resetAndApply({ q: qInput.trim() })
+  function clearAll() {
+    setQInput('')
+    resetAndApply({ category: '', q: '' })
   }
 
-  function clearSearch() {
-    setQInput('')
-    resetAndApply({ q: '' })
-  }
+  const hasFilters = category || q
 
   return (
     <div className="min-h-screen">
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-1">Feed da comunidade</h1>
-          <p className="text-sm text-gray-400">Pimenta Bueno — RO</p>
+          <p className="text-sm text-gray-400">Pimenta Bueno</p>
         </div>
 
-        <div className="mb-6 flex flex-col gap-3">
-          {/* Busca */}
-          <form onSubmit={handleSearch} className="flex gap-2">
+        <div className="mb-6" ref={searchContainerRef}>
+          {/* Busca com debounce */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             <input
               type="text"
               placeholder="Buscar por título, descrição ou bairro..."
               value={qInput}
               onChange={(e) => setQInput(e.target.value)}
-              className="flex-1 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onFocus={() => setSearchFocused(true)}
+              onBlur={(e) => {
+                if (!searchContainerRef.current?.contains(e.relatedTarget)) {
+                  setSearchFocused(false)
+                }
+              }}
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg pl-9 pr-9 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <button type="submit" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Buscar
-            </button>
-            {q && (
-              <button type="button" onClick={clearSearch} className="text-sm px-3 py-2 text-gray-400 hover:text-gray-600 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                ×
-              </button>
-            )}
-          </form>
-
-          {/* Filtros de categoria */}
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c) => (
+            {qInput && (
               <button
-                key={c}
-                onClick={() => handleCategoryClick(c)}
-                className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
-                  category === c
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
-                }`}
+                type="button"
+                onClick={() => { setQInput(''); resetAndApply({ q: '' }) }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5"
+                aria-label="Limpar busca"
               >
-                {CATEGORY_LABELS[c]}
-              </button>
-            ))}
-            {category && (
-              <button onClick={() => resetAndApply({ category: '' })} className="text-sm px-3 py-1.5 rounded-full text-gray-400 hover:text-gray-600">
-                × limpar
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             )}
           </div>
 
+          {/* Filtros — aparecem ao focar na busca */}
+          {(searchFocused || category) && (
+            <div className="flex flex-wrap gap-1 items-center mt-2 animate-slide-down">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleCategoryClick(c)}
+                  className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                    category === c
+                      ? 'bg-blue-50 text-blue-600 font-medium dark:bg-blue-900/25 dark:text-blue-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {CATEGORY_LABELS[c]}
+                </button>
+              ))}
+              {category && (
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={clearAll}
+                  className="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                >
+                  limpar
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {error && <div className="text-center py-16 text-red-400 text-sm">{error}</div>}
 
         {!loading && !error && posts.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-gray-400 text-sm mb-3">Nenhum post encontrado.</p>
-            <Link to="/submit" className="text-sm text-blue-600 hover:underline">
-              Seja o primeiro a publicar →
-            </Link>
+            {hasFilters ? (
+              <>
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Nenhum resultado encontrado</p>
+                <p className="text-gray-400 text-xs mb-4">
+                  {q && category
+                    ? `"${q}" em ${CATEGORY_LABELS[category]}`
+                    : q
+                    ? `para "${q}"`
+                    : `em ${CATEGORY_LABELS[category]}`}
+                </p>
+                <button onClick={clearAll} className="text-sm text-blue-600 hover:underline">
+                  Limpar filtros
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-400 text-sm mb-3">Nenhum post encontrado.</p>
+                <Link to="/submit" className="text-sm text-blue-600 hover:underline">
+                  Seja o primeiro a publicar →
+                </Link>
+              </>
+            )}
           </div>
         )}
 
@@ -145,7 +192,6 @@ export default function Feed() {
           ))}
         </div>
 
-        {/* Skeleton loader */}
         {loading && (
           <div className="flex flex-col gap-4 mt-4">
             {[1, 2, 3].map((i) => (
@@ -159,7 +205,6 @@ export default function Feed() {
           </div>
         )}
 
-        {/* Sentinel para infinite scroll */}
         <div ref={sentinelRef} className="h-4" />
 
         {!hasMore && posts.length > 0 && (

@@ -1,0 +1,8 @@
+**/.git
+**/.claude
+**/node_modules
+**/dist
+**/.env
+**/*.env.local
+backend/uploads/avatars/*
+!backend/uploads/avatars/.gitkeep
