@@ -1,13 +1,3 @@
-/**
- * Entry point do servidor Fastify.
- *
- * Responsabilidades:
- *  - Validar variáveis de ambiente obrigatórias antes de subir
- *  - Registrar plugins globais (CORS, Helmet, rate-limit, uploads)
- *  - Montar as rotas da API
- *  - Iniciar o listener HTTP
- */
-
 import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
@@ -29,7 +19,6 @@ import adminRoutes from './routes/admin.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// Falha rápida: sem essas variáveis o servidor não pode operar com segurança.
 const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL']
 const missing = REQUIRED_ENV.filter((k) => !process.env[k])
 if (missing.length > 0) {
@@ -37,7 +26,6 @@ if (missing.length > 0) {
   process.exit(1)
 }
 
-// JWT_SECRET curto demais torna os tokens facilmente adivináveis.
 if (process.env.JWT_SECRET.length < 32) {
   console.error('[startup] JWT_SECRET deve ter pelo menos 32 caracteres')
   process.exit(1)
@@ -51,18 +39,13 @@ const fastify = Fastify({
     : { transport: { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:HH:MM:ss', ignore: 'pid,hostname' } } }
 })
 
-// Helmet adiciona cabeçalhos HTTP de segurança.
-// contentSecurityPolicy desabilitado intencionalmente: esta instância serve apenas
-// JSON e imagens estáticas (não HTML), então CSP não tem efeito prático aqui.
-// crossOriginResourcePolicy: 'cross-origin' é necessário para que o frontend
-// em domínio diferente consiga carregar os avatares.
+// contentSecurityPolicy: off — API JSON-only, sem HTML renderizado
+// crossOriginResourcePolicy: cross-origin — frontend em domínio diferente precisa carregar avatares
 await fastify.register(helmet, {
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 })
 
-// Limite global padrão. Rotas sensíveis (login, cadastro) definem limites próprios
-// mais restritivos diretamente na configuração da rota.
 await fastify.register(rateLimit, {
   max: 100,
   timeWindow: '1 minute',
@@ -71,17 +54,11 @@ await fastify.register(rateLimit, {
 
 await fastify.register(multipart)
 
-// Serve arquivos de upload (avatares) diretamente pelo backend.
-// Em produção com nginx, o nginx pode servir esses arquivos diretamente
-// via `location /uploads/` para melhor desempenho.
 await fastify.register(staticFiles, {
   root: join(__dirname, '..', 'uploads'),
   prefix: '/uploads/',
 })
 
-// Em produção, serve o build do React e usa index.html como fallback para
-// client-side routing. Registrado antes das rotas de API para que os assets
-// estáticos (JS/CSS) sejam resolvidos corretamente.
 if (isProd) {
   const publicDir = join(__dirname, '..', 'public')
   await fastify.register(staticFiles, {

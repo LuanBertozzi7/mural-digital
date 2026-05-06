@@ -1,14 +1,4 @@
-/**
- * Rotas do painel de moderação (/api/admin/*).
- *
- * Todas as rotas exigem JWT válido com role ADMIN (fastify.requireAdmin).
- *
- *  GET    /api/admin/posts       → lista todos os posts, opcionalmente filtrados por status
- *  PATCH  /api/admin/posts/:id   → altera o status de um post (PENDING/APPROVED/REJECTED)
- *  DELETE /api/admin/posts/:id   → remove um post permanentemente
- */
-
-const VALID_STATUSES = ['PENDING', 'APPROVED', 'REJECTED']
+import { VALID_STATUSES } from '../constants.js'
 
 export default async function adminRoutes(fastify) {
   fastify.get('/api/admin/posts', {

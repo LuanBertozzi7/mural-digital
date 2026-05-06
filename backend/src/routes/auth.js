@@ -1,18 +1,6 @@
-/**
- * Rotas de autenticação.
- *
- *  POST /api/auth/register  → cria conta e retorna JWT + dados do usuário
- *  POST /api/auth/login     → autentica e retorna JWT + dados do usuário
- *
- * Ambas as rotas têm rate limit próprio (10 tentativas / 15 min por IP)
- * para proteger contra ataques de força bruta e cadastros em massa.
- */
-
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
 
-// Rate limit restritivo compartilhado pelas rotas de autenticação.
-// Mais apertado que o global (100/min) porque login é o alvo principal de brute force.
 const AUTH_RATE_LIMIT = { max: 10, timeWindow: '15 minutes' }
 
 export default async function authRoutes(fastify) {
