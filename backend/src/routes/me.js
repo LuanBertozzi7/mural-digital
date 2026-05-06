@@ -1,16 +1,3 @@
-/**
- * Rotas do usuário autenticado (/api/me/*).
- *
- * Todas as rotas exigem JWT válido (fastify.authenticate).
- *
- *  GET    /api/me/profile       → retorna perfil do usuário logado
- *  PATCH  /api/me/profile       → atualiza nome e bairro
- *  POST   /api/me/avatar        → faz upload de foto de perfil (máx. 2 MB)
- *  GET    /api/me/posts         → lista posts do usuário logado
- *  PATCH  /api/me/posts/:id     → edita post próprio (recoloca em PENDING)
- *  DELETE /api/me/posts/:id     → remove post próprio
- */
-
 import { mkdirSync, existsSync, unlinkSync } from 'fs'
 import { writeFile } from 'fs/promises'
 import { join, dirname } from 'path'
@@ -21,7 +8,7 @@ const avatarsDir = join(__dirname, '..', '..', 'uploads', 'avatars')
 if (!existsSync(avatarsDir)) mkdirSync(avatarsDir, { recursive: true })
 
 const PROFILE_SELECT = { id: true, name: true, email: true, role: true, neighborhood: true, avatarUrl: true }
-const VALID_CATEGORIES = ['VAGAS', 'PERDIDOS', 'PROBLEMAS', 'AVISOS', 'EVENTOS', 'COMPRAS']
+import { VALID_CATEGORIES } from '../constants.js'
 
 /**
  * Verifica a assinatura binária (magic bytes) do buffer para confirmar

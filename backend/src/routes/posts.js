@@ -1,13 +1,20 @@
-/**
- * Rotas públicas de posts.
- *
- *  GET  /api/posts  → feed paginado de posts aprovados, com filtro por
- *                     categoria, bairro e busca textual (título/descrição/bairro)
- *  POST /api/posts  → cria post com status PENDING; aceita usuários autenticados
- *                     (post vinculado ao userId) e anônimos (userId = null)
- */
+import { VALID_CATEGORIES } from '../constants.js'
 
-const VALID_CATEGORIES = ['VAGAS', 'PERDIDOS', 'PROBLEMAS', 'AVISOS', 'EVENTOS', 'COMPRAS']
+function serializePost(p, { includeContact = false } = {}) {
+  return {
+    id:           p.id,
+    title:        p.title,
+    description:  p.description,
+    category:     p.category,
+    neighborhood: p.neighborhood,
+    status:       p.status,
+    author:       p.user?.name ?? 'Anônimo',
+    authorAvatar: p.user?.avatarUrl ?? null,
+    editedAt:     p.editedAt,
+    createdAt:    p.createdAt,
+    ...(includeContact && { contact: p.contact ?? null }),
+  }
+}
 
 export default async function postsRoutes(fastify) {
   fastify.get('/api/posts', {
@@ -45,20 +52,7 @@ export default async function postsRoutes(fastify) {
       include: { user: { select: { name: true, avatarUrl: true } } }
     })
 
-    // Serialização explícita: garante que o campo `user` (relação interna)
-    // não vaze diretamente para o cliente — apenas os campos necessários são expostos.
-    return posts.map((p) => ({
-      id:           p.id,
-      title:        p.title,
-      description:  p.description,
-      category:     p.category,
-      neighborhood: p.neighborhood,
-      status:       p.status,
-      author:       p.user?.name ?? 'Anônimo',
-      authorAvatar: p.user?.avatarUrl ?? null,
-      editedAt:     p.editedAt,
-      createdAt:    p.createdAt
-    }))
+    return posts.map((p) => serializePost(p))
   })
 
   fastify.get('/api/posts/:id', {
@@ -74,18 +68,7 @@ export default async function postsRoutes(fastify) {
       include: { user: { select: { name: true, avatarUrl: true } } }
     })
     if (!post) return reply.code(404).send({ error: 'Post não encontrado' })
-    return {
-      id:           post.id,
-      title:        post.title,
-      description:  post.description,
-      category:     post.category,
-      neighborhood: post.neighborhood,
-      contact:      post.contact ?? null,
-      author:       post.user?.name ?? 'Anônimo',
-      authorAvatar: post.user?.avatarUrl ?? null,
-      editedAt:     post.editedAt,
-      createdAt:    post.createdAt,
-    }
+    return serializePost(post, { includeContact: true })
   })
 
   fastify.post('/api/posts', {
