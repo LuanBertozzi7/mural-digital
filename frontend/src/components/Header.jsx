@@ -186,7 +186,7 @@ export default function Header() {
     logout()
     setMenuOpen(false)
     navigate('/')
-    window.location.reload()
+    window.dispatchEvent(new Event('userUpdated'))
   }
 
   const closeMenu = () => setMenuOpen(false)
