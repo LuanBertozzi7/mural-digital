@@ -2,12 +2,7 @@ import { useState } from 'react'
 import { apiFetch } from '../api'
 import { isLoggedIn, getUser } from '../auth'
 import { useToast } from '../context/ToastContext'
-
-const CATEGORIES = ['VAGAS', 'PERDIDOS', 'PROBLEMAS', 'AVISOS', 'EVENTOS', 'COMPRAS']
-const CATEGORY_LABELS = {
-  VAGAS: 'Vagas', PERDIDOS: 'Perdidos', PROBLEMAS: 'Problemas',
-  AVISOS: 'Avisos', EVENTOS: 'Eventos', COMPRAS: 'Compras',
-}
+import { CATEGORIES, CATEGORY_LABELS } from '../constants/categories'
 
 const EMPTY = { title: '', description: '', category: 'AVISOS', neighborhood: '', contact: '' }
 

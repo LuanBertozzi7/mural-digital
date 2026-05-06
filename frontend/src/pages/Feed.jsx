@@ -2,12 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../api'
 import PostCard from '../components/PostCard'
-
-const CATEGORIES = ['VAGAS', 'PERDIDOS', 'PROBLEMAS', 'AVISOS', 'EVENTOS', 'COMPRAS']
-const CATEGORY_LABELS = {
-  VAGAS: 'Vagas', PERDIDOS: 'Perdidos', PROBLEMAS: 'Problemas',
-  AVISOS: 'Avisos', EVENTOS: 'Eventos', COMPRAS: 'Compras',
-}
+import { CATEGORIES, CATEGORY_LABELS } from '../constants/categories'
 
 export default function Feed() {
   const [posts, setPosts] = useState([])
