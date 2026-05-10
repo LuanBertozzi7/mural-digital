@@ -8,6 +8,7 @@ import { apiFetch } from '../api'
 import { isLoggedIn, getUser } from '../auth'
 import { useToast } from '../context/ToastContext'
 import { CATEGORIES, CATEGORY_LABELS } from '../constants/categories'
+import { NEIGHBORHOODS } from '../constants/neighborhoods'
 
 const EMPTY = { title: '', description: '', category: 'AVISOS', neighborhood: '', contact: '' }
 
@@ -105,8 +106,12 @@ export default function Submit() {
                 required
                 maxLength={100}
                 placeholder="Ex: Centro"
+                list="neighborhoods-list"
                 className={INPUT}
               />
+              <datalist id="neighborhoods-list">
+                {NEIGHBORHOODS.map((n) => <option key={n} value={n} />)}
+              </datalist>
             </div>
           </div>
 

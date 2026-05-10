@@ -9,6 +9,7 @@ import { apiFetch } from '../api'
 import { isLoggedIn } from '../auth'
 import { useToast } from '../context/ToastContext'
 import { CATEGORIES, CATEGORY_LABELS } from '../constants/categories'
+import { NEIGHBORHOODS } from '../constants/neighborhoods'
 import ConfirmModal from '../components/ConfirmModal'
 
 const STATUS_BADGE = {
@@ -130,7 +131,10 @@ export default function MyPosts() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bairro</label>
-                      <input value={editForm.neighborhood} onChange={(e) => setEditForm((f) => ({ ...f, neighborhood: e.target.value }))} className={INPUT} maxLength={100} />
+                      <input value={editForm.neighborhood} onChange={(e) => setEditForm((f) => ({ ...f, neighborhood: e.target.value }))} className={INPUT} maxLength={100} list="edit-neighborhoods-list" />
+                      <datalist id="edit-neighborhoods-list">
+                        {NEIGHBORHOODS.map((n) => <option key={n} value={n} />)}
+                      </datalist>
                     </div>
                   </div>
                   <div>
