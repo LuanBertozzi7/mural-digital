@@ -257,8 +257,11 @@ export default function Header() {
           <DarkToggle />
         </nav>
 
-        {/* Mobile: dark toggle + hamburger */}
+        {/* Mobile: search + dark toggle + hamburger */}
         <div className="flex items-center gap-1 md:hidden">
+          <div className="w-36 sm:w-48">
+            <SearchBar />
+          </div>
           {isLoggedIn() && <Avatar user={user} size="sm" />}
           <DarkToggle />
           <button
@@ -284,7 +287,6 @@ export default function Header() {
       {/* Mobile menu dropdown */}
       {menuOpen && (
         <nav id="mobile-menu" className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 flex flex-col gap-2 animate-slide-down">
-          <SearchBar />
           <NavLink to="/" onClick={closeMenu}>Feed</NavLink>
           <NavLink to="/submit" onClick={closeMenu}>Publicar</NavLink>
           {isLoggedIn() ? (
