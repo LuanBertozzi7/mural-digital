@@ -9,6 +9,7 @@ import { apiFetch } from '../api'
 import { isLoggedIn } from '../auth'
 import { useToast } from '../context/ToastContext'
 import { CATEGORIES, CATEGORY_LABELS } from '../constants/categories'
+import ConfirmModal from '../components/ConfirmModal'
 
 const STATUS_BADGE = {
   PENDING: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800',
@@ -26,6 +27,7 @@ export default function MyPosts() {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const [confirmId, setConfirmId] = useState(null)
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -60,18 +62,27 @@ export default function MyPosts() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Excluir este post permanentemente?')) return
     try {
       await apiFetch(`/api/me/posts/${id}`, { method: 'DELETE' })
       setPosts((prev) => prev.filter((p) => p.id !== id))
       toast('Post excluído.')
     } catch (e) {
       setError(e.message)
+    } finally {
+      setConfirmId(null)
     }
   }
 
   return (
     <div className="min-h-screen animate-fade-up">
+      <ConfirmModal
+        open={confirmId !== null}
+        title="Excluir post"
+        message="Essa ação é permanente e não pode ser desfeita."
+        confirmLabel="Excluir"
+        onConfirm={() => handleDelete(confirmId)}
+        onCancel={() => setConfirmId(null)}
+      />
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-1">Meus posts</h1>
@@ -170,7 +181,7 @@ export default function MyPosts() {
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDelete(p.id)}
+                      onClick={() => setConfirmId(p.id)}
                       aria-label={`Excluir post: ${p.title}`}
                       className="text-xs text-red-500 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     >

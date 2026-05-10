@@ -9,6 +9,7 @@ import { apiFetch } from '../api'
 import { getUser, isLoggedIn } from '../auth'
 import { useToast } from '../context/ToastContext'
 import { CATEGORY_LABELS } from '../constants/categories'
+import ConfirmModal from '../components/ConfirmModal'
 
 const STATUS_FILTER_OPTIONS = [
   { value: 'PENDING', label: 'Aguardando' },
@@ -30,6 +31,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(null)
   const [actionError, setActionError] = useState(null)
+  const [confirmId, setConfirmId] = useState(null)
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -62,7 +64,7 @@ export default function AdminPanel() {
   }
 
   async function deletePost(id) {
-    if (!confirm('Remover este post permanentemente?')) return
+    setConfirmId(null)
     setActionLoading(id + 'del')
     setActionError(null)
     try {
@@ -78,6 +80,14 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen animate-fade-up">
+      <ConfirmModal
+        open={confirmId !== null}
+        title="Remover post"
+        message="Essa ação é permanente e não pode ser desfeita."
+        confirmLabel="Remover"
+        onConfirm={() => deletePost(confirmId)}
+        onCancel={() => setConfirmId(null)}
+      />
       <div className="max-w-4xl mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-1">Moderação</h1>
@@ -162,7 +172,7 @@ export default function AdminPanel() {
                   </button>
                 )}
                 <button
-                  onClick={() => deletePost(p.id)}
+                  onClick={() => setConfirmId(p.id)}
                   disabled={!!actionLoading}
                   aria-label={`Remover post: ${p.title}`}
                   className="text-xs font-medium text-red-500 border border-red-200 dark:border-red-800 px-3.5 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ml-auto"
