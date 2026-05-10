@@ -13,7 +13,7 @@ export default async function authRoutes(fastify) {
         properties: {
           name:     { type: 'string', minLength: 1, maxLength: 100 },
           email:    { type: 'string', format: 'email' },
-          password: { type: 'string', minLength: 6 }
+          password: { type: 'string', minLength: 8 }
         }
       }
     }
@@ -134,7 +134,7 @@ export default async function authRoutes(fastify) {
         required: ['token', 'password'],
         properties: {
           token:    { type: 'string' },
-          password: { type: 'string', minLength: 6 }
+          password: { type: 'string', minLength: 8 }
         }
       }
     }

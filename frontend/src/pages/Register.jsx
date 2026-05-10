@@ -86,10 +86,10 @@ export default function Register() {
               value={form.password}
               onChange={handleChange}
               required
-              minLength={6}
+              minLength={8}
               className={INPUT}
             />
-            <p className="text-xs text-gray-400 mt-1.5">Mínimo 6 caracteres</p>
+            <p className="text-xs text-gray-400 mt-1.5">Mínimo 8 caracteres</p>
           </div>
           <button
             type="submit"

@@ -62,7 +62,7 @@ export default function ResetPassword() {
         <div className="text-center mb-8">
           <span className="inline-flex w-10 h-10 bg-blue-600 rounded-xl items-center justify-center text-white font-bold text-lg mb-3">M</span>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Nova senha</h1>
-          <p className="text-sm text-gray-400 mt-1">Escolha uma senha com pelo menos 6 caracteres</p>
+          <p className="text-sm text-gray-400 mt-1">Escolha uma senha com pelo menos 8 caracteres</p>
         </div>
 
         {error && (
@@ -82,8 +82,8 @@ export default function ResetPassword() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
-                placeholder="mínimo 6 caracteres"
+                minLength={8}
+                placeholder="mínimo 8 caracteres"
                 className={`${INPUT} pr-10`}
               />
               <button
