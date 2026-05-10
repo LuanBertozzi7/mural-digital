@@ -18,6 +18,7 @@ export default function PostDetail() {
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [notFound, setNotFound] = useState(false)
 
   async function handleShare() {
     const url = window.location.href
@@ -35,7 +36,7 @@ export default function PostDetail() {
     apiFetch(`/api/posts/${id}`)
       .then(setPost)
       .catch((e) => {
-        if (e.status === 404) navigate('/', { replace: true })
+        if (e.status === 404) setNotFound(true)
         else setError(e.message)
       })
       .finally(() => setLoading(false))
@@ -51,6 +52,19 @@ export default function PostDetail() {
             <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-full" />
             <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-5/6" />
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-4xl font-bold text-gray-200 dark:text-gray-700 mb-4">404</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">Este post não foi encontrado.</p>
+          <p className="text-gray-400 text-xs mb-5">Ele pode ter sido removido ou o link está incorreto.</p>
+          <Link to="/" className="text-sm text-blue-600 hover:underline">← Voltar ao feed</Link>
         </div>
       </div>
     )
