@@ -122,7 +122,22 @@ export default function AdminPanel() {
         )}
 
         {loading && (
-          <p aria-busy="true" className="text-gray-400 text-sm text-center py-12">Carregando...</p>
+          <div aria-busy="true" aria-label="Carregando posts" className="flex flex-col gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 animate-pulse">
+                <div className="flex justify-between mb-3">
+                  <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
+                  <div className="h-5 bg-gray-100 dark:bg-gray-800 rounded-full w-20" />
+                </div>
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full mb-2" />
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-4/5 mb-5" />
+                <div className="flex gap-2">
+                  <div className="h-7 bg-gray-100 dark:bg-gray-800 rounded-lg w-20" />
+                  <div className="h-7 bg-gray-100 dark:bg-gray-800 rounded-lg w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         {!loading && posts.length === 0 && (
           <p className="text-gray-400 text-sm text-center py-12">Nenhum post nesta categoria.</p>
