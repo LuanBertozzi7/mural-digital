@@ -1,8 +1,20 @@
+/**
+ * Barra de progresso global no topo da tela, ativada automaticamente
+ * via monkey-patch do fetch para indicar que há requisições em andamento.
+ *
+ * `initProgress()` deve ser chamado uma única vez na raiz da aplicação (App.jsx).
+ * O componente é puramente decorativo — oculto de leitores de tela via aria-hidden.
+ */
 import { useState, useEffect } from 'react'
 
 let _pending = 0
 let _patched = false
 
+/**
+ * Sobrescreve o `window.fetch` global para despachar os eventos `np:start` e `np:done`,
+ * controlando a visibilidade da barra de progresso.
+ * Idempotente: executar mais de uma vez não tem efeito.
+ */
 export function initProgress() {
   if (_patched) return
   _patched = true
@@ -25,6 +37,7 @@ export default function TopProgress() {
     const onStart = () => {
       setPhase('running')
       setWidth(0)
+      // Pequeno delay para garantir que o browser pinte o estado inicial antes de animar
       setTimeout(() => setWidth(72), 20)
     }
     const onDone = () => {
@@ -43,7 +56,7 @@ export default function TopProgress() {
   if (phase === 'idle') return null
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[200] h-[2px] pointer-events-none">
+    <div aria-hidden="true" className="fixed top-0 left-0 right-0 z-[200] h-[2px] pointer-events-none">
       <div
         style={{
           width: `${width}%`,

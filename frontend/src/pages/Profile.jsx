@@ -1,3 +1,9 @@
+/**
+ * Página de perfil do usuário autenticado.
+ * Permite alterar nome, bairro e foto de avatar (upload direto para a API).
+ * O e-mail é exibido como somente leitura.
+ * Após salvar, dispara o evento `userUpdated` para sincronizar o Header.
+ */
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch, BASE } from '../api'
@@ -87,7 +93,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Carregando...</p>
+        <p aria-busy="true" className="text-gray-400 text-sm">Carregando...</p>
       </div>
     )
   }
@@ -146,14 +152,16 @@ export default function Profile() {
         <p className="text-center text-xs text-gray-400 -mt-4 mb-8">Clique na foto para alterar · JPG, PNG, WebP ou GIF · máx. 2MB</p>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm mb-5">
+          <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm mb-5">
             {error}
           </div>
         )}
         <form onSubmit={handleSave} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm flex flex-col gap-5">
           <div>
-            <label className={LABEL}>Nome</label>
+            <label htmlFor="profile-name" className={LABEL}>Nome</label>
             <input
+              id="profile-name"
+              autoComplete="name"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               required
@@ -162,13 +170,21 @@ export default function Profile() {
             />
           </div>
           <div>
-            <label className={LABEL}>E-mail</label>
-            <input value={profile?.email ?? ''} disabled className={`${INPUT} opacity-50 cursor-not-allowed`} />
+            <label htmlFor="profile-email" className={LABEL}>E-mail</label>
+            <input
+              id="profile-email"
+              value={profile?.email ?? ''}
+              disabled
+              aria-readonly="true"
+              className={`${INPUT} opacity-50 cursor-not-allowed`}
+            />
             <p className="text-xs text-gray-400 mt-1.5">O e-mail não pode ser alterado.</p>
           </div>
           <div>
-            <label className={LABEL}>Bairro</label>
+            <label htmlFor="profile-neighborhood" className={LABEL}>Bairro</label>
             <input
+              id="profile-neighborhood"
+              autoComplete="address-level2"
               value={form.neighborhood}
               onChange={(e) => setForm((f) => ({ ...f, neighborhood: e.target.value }))}
               maxLength={100}
@@ -179,7 +195,7 @@ export default function Profile() {
           <button
             type="submit"
             disabled={saving}
-            className="bg-blue-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1"
+            className="bg-blue-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mt-1"
           >
             {saving ? 'Salvando...' : 'Salvar alterações'}
           </button>

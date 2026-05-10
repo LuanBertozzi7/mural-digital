@@ -1,7 +1,14 @@
+/**
+ * Painel de moderação — acessível apenas para usuários com role ADMIN.
+ * Permite aprovar, rejeitar e remover posts da comunidade.
+ * Redireciona para o feed se o usuário não for administrador.
+ */
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api'
 import { getUser, isLoggedIn } from '../auth'
+import { useToast } from '../context/ToastContext'
+import { CATEGORY_LABELS } from '../constants/categories'
 
 const STATUS_FILTER_OPTIONS = [
   { value: 'PENDING', label: 'Aguardando' },
@@ -17,11 +24,6 @@ const STATUS_BADGE = {
 }
 const STATUS_LABEL = { PENDING: 'Aguardando', APPROVED: 'Aprovado', REJECTED: 'Rejeitado' }
 
-const CATEGORY_LABEL = {
-  VAGAS: 'Vagas', PERDIDOS: 'Perdidos', PROBLEMAS: 'Problemas',
-  AVISOS: 'Avisos', EVENTOS: 'Eventos', COMPRAS: 'Compras',
-}
-
 export default function AdminPanel() {
   const [posts, setPosts] = useState([])
   const [statusFilter, setStatusFilter] = useState('PENDING')
@@ -29,6 +31,7 @@ export default function AdminPanel() {
   const [actionLoading, setActionLoading] = useState(null)
   const [actionError, setActionError] = useState(null)
   const navigate = useNavigate()
+  const toast = useToast()
 
   const fetchPosts = useCallback(() => {
     setLoading(true)
@@ -50,6 +53,7 @@ export default function AdminPanel() {
     try {
       await apiFetch(`/api/admin/posts/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) })
       setPosts((prev) => prev.map((p) => p.id === id ? { ...p, status } : p))
+      toast(status === 'APPROVED' ? 'Post aprovado.' : 'Post rejeitado.')
     } catch (e) {
       setActionError(`Erro ao atualizar post ${id}: ${e.message}`)
     } finally {
@@ -64,6 +68,7 @@ export default function AdminPanel() {
     try {
       await apiFetch(`/api/admin/posts/${id}`, { method: 'DELETE' })
       setPosts((prev) => prev.filter((p) => p.id !== id))
+      toast('Post removido.')
     } catch (e) {
       setActionError(`Erro ao remover post ${id}: ${e.message}`)
     } finally {
@@ -83,12 +88,13 @@ export default function AdminPanel() {
           </p>
         </div>
 
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <div role="group" aria-label="Filtrar por status" className="flex gap-2 mb-6 flex-wrap">
           {STATUS_FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setStatusFilter(opt.value)}
-              className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
+              aria-pressed={statusFilter === opt.value}
+              className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 statusFilter === opt.value
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
@@ -100,12 +106,14 @@ export default function AdminPanel() {
         </div>
 
         {actionError && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm mb-5">
+          <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm mb-5">
             {actionError}
           </div>
         )}
 
-        {loading && <p className="text-gray-400 text-sm text-center py-12">Carregando...</p>}
+        {loading && (
+          <p aria-busy="true" className="text-gray-400 text-sm text-center py-12">Carregando...</p>
+        )}
         {!loading && posts.length === 0 && (
           <p className="text-gray-400 text-sm text-center py-12">Nenhum post nesta categoria.</p>
         )}
@@ -123,7 +131,7 @@ export default function AdminPanel() {
               <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-4">{p.description}</p>
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400 dark:text-gray-500 pb-4 border-b border-gray-100 dark:border-gray-800 mb-4">
-                <span className="font-medium text-gray-500 dark:text-gray-400">{CATEGORY_LABEL[p.category]}</span>
+                <span className="font-medium text-gray-500 dark:text-gray-400">{CATEGORY_LABELS[p.category]}</span>
                 <span>·</span>
                 <span>{p.neighborhood}</span>
                 <span>·</span>
@@ -134,20 +142,32 @@ export default function AdminPanel() {
 
               <div className="flex gap-2 flex-wrap">
                 {p.status !== 'APPROVED' && (
-                  <button onClick={() => setStatus(p.id, 'APPROVED')} disabled={!!actionLoading}
-                    className="text-xs font-medium bg-emerald-600 text-white px-3.5 py-1.5 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors">
-                    {actionLoading === p.id + 'APPROVED' ? '...' : 'Aprovar'}
+                  <button
+                    onClick={() => setStatus(p.id, 'APPROVED')}
+                    disabled={!!actionLoading}
+                    aria-label={`Aprovar post: ${p.title}`}
+                    className="text-xs font-medium bg-emerald-600 text-white px-3.5 py-1.5 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {actionLoading === p.id + 'APPROVED' ? 'Aprovando...' : 'Aprovar'}
                   </button>
                 )}
                 {p.status !== 'REJECTED' && (
-                  <button onClick={() => setStatus(p.id, 'REJECTED')} disabled={!!actionLoading}
-                    className="text-xs font-medium bg-amber-500 text-white px-3.5 py-1.5 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors">
-                    {actionLoading === p.id + 'REJECTED' ? '...' : 'Rejeitar'}
+                  <button
+                    onClick={() => setStatus(p.id, 'REJECTED')}
+                    disabled={!!actionLoading}
+                    aria-label={`Rejeitar post: ${p.title}`}
+                    className="text-xs font-medium bg-amber-500 text-white px-3.5 py-1.5 rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {actionLoading === p.id + 'REJECTED' ? 'Rejeitando...' : 'Rejeitar'}
                   </button>
                 )}
-                <button onClick={() => deletePost(p.id)} disabled={!!actionLoading}
-                  className="text-xs font-medium text-red-500 border border-red-200 dark:border-red-800 px-3.5 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors ml-auto">
-                  {actionLoading === p.id + 'del' ? '...' : 'Remover'}
+                <button
+                  onClick={() => deletePost(p.id)}
+                  disabled={!!actionLoading}
+                  aria-label={`Remover post: ${p.title}`}
+                  className="text-xs font-medium text-red-500 border border-red-200 dark:border-red-800 px-3.5 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ml-auto"
+                >
+                  {actionLoading === p.id + 'del' ? 'Removendo...' : 'Remover'}
                 </button>
               </div>
             </div>

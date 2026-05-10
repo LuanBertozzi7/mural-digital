@@ -1,7 +1,14 @@
+/**
+ * Página de gerenciamento dos posts do usuário autenticado.
+ * Permite visualizar o status de moderação, editar e excluir posts próprios.
+ * Edições reenviam o post para moderação (volta a PENDING).
+ */
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { apiFetch } from '../api'
 import { isLoggedIn } from '../auth'
+import { useToast } from '../context/ToastContext'
+import { CATEGORIES, CATEGORY_LABELS } from '../constants/categories'
 
 const STATUS_BADGE = {
   PENDING: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800',
@@ -9,12 +16,6 @@ const STATUS_BADGE = {
   REJECTED: 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
 }
 const STATUS_LABEL = { PENDING: 'Aguardando', APPROVED: 'Aprovado', REJECTED: 'Rejeitado' }
-
-const CATEGORIES = ['VAGAS', 'PERDIDOS', 'PROBLEMAS', 'AVISOS', 'EVENTOS', 'COMPRAS']
-const CATEGORY_LABEL = {
-  VAGAS: 'Vagas', PERDIDOS: 'Perdidos', PROBLEMAS: 'Problemas',
-  AVISOS: 'Avisos', EVENTOS: 'Eventos', COMPRAS: 'Compras',
-}
 
 const INPUT = 'w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 
@@ -26,6 +27,7 @@ export default function MyPosts() {
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
   const navigate = useNavigate()
+  const toast = useToast()
 
   useEffect(() => {
     if (!isLoggedIn()) { navigate('/login'); return }
@@ -49,6 +51,7 @@ export default function MyPosts() {
       })
       setPosts((prev) => prev.map((p) => p.id === id ? updated : p))
       setEditingId(null)
+      toast('Post atualizado! Aguarde a aprovação do moderador.')
     } catch (e) {
       setError(e.message)
     } finally {
@@ -61,6 +64,7 @@ export default function MyPosts() {
     try {
       await apiFetch(`/api/me/posts/${id}`, { method: 'DELETE' })
       setPosts((prev) => prev.filter((p) => p.id !== id))
+      toast('Post excluído.')
     } catch (e) {
       setError(e.message)
     }
@@ -75,12 +79,14 @@ export default function MyPosts() {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm mb-5">
+          <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm mb-5">
             {error}
           </div>
         )}
 
-        {loading && <p className="text-gray-400 text-sm text-center py-12">Carregando...</p>}
+        {loading && (
+          <p aria-busy="true" className="text-gray-400 text-sm text-center py-12">Carregando...</p>
+        )}
 
         {!loading && posts.length === 0 && (
           <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
@@ -108,7 +114,7 @@ export default function MyPosts() {
                     <div>
                       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Categoria</label>
                       <select value={editForm.category} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))} className={INPUT}>
-                        {CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
+                        {CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
                       </select>
                     </div>
                     <div>
@@ -121,11 +127,19 @@ export default function MyPosts() {
                     <input value={editForm.contact ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, contact: e.target.value }))} maxLength={100} placeholder="WhatsApp ou e-mail" className={INPUT} />
                   </div>
                   <p className="text-xs text-amber-600 dark:text-amber-400">Editar vai enviar o post para moderação novamente.</p>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleSaveEdit(p.id)} disabled={saving} className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => handleSaveEdit(p.id)}
+                      disabled={saving}
+                      className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
                       {saving ? 'Salvando...' : 'Salvar'}
                     </button>
-                    <button onClick={() => setEditingId(null)} className="text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <button
+                      onClick={() => setEditingId(null)}
+                      disabled={saving}
+                      className="text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                    >
                       Cancelar
                     </button>
                   </div>
@@ -140,18 +154,26 @@ export default function MyPosts() {
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">{p.description}</p>
                   <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500 pb-4 border-b border-gray-100 dark:border-gray-800 mb-4">
-                    <span className="font-medium text-gray-500 dark:text-gray-400">{CATEGORY_LABEL[p.category]}</span>
+                    <span className="font-medium text-gray-500 dark:text-gray-400">{CATEGORY_LABELS[p.category]}</span>
                     <span>·</span>
                     <span>{p.neighborhood}</span>
                     <span>·</span>
                     <span>{new Date(p.createdAt).toLocaleDateString('pt-BR')}</span>
                     {p.editedAt && <span className="italic">· editado</span>}
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => startEdit(p)} className="text-xs text-blue-600 border border-blue-200 dark:border-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => startEdit(p)}
+                      aria-label={`Editar post: ${p.title}`}
+                      className="text-xs text-blue-600 border border-blue-200 dark:border-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                    >
                       Editar
                     </button>
-                    <button onClick={() => handleDelete(p.id)} className="text-xs text-red-500 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    <button
+                      onClick={() => handleDelete(p.id)}
+                      aria-label={`Excluir post: ${p.title}`}
+                      className="text-xs text-red-500 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
                       Excluir
                     </button>
                   </div>

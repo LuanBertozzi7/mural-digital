@@ -1,8 +1,21 @@
+/**
+ * Cabeçalho global da aplicação.
+ *
+ * Inclui: logo, navegação desktop, barra de pesquisa com debounce,
+ * menu do usuário com dropdown, alternador de tema e menu hamburger mobile.
+ *
+ * Escuta o evento customizado `userUpdated` para sincronizar o estado do
+ * usuário quando o perfil ou avatar é atualizado em outras partes do app.
+ */
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { getUser, isLoggedIn, logout } from '../auth'
 import Avatar from './Avatar'
 
+/**
+ * Campo de pesquisa com debounce de 400ms.
+ * Atualiza a query string `?q=` do feed sem recarregar a página.
+ */
 function SearchBar() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -30,19 +43,28 @@ function SearchBar() {
 
   return (
     <div className="relative w-full max-w-xs">
-      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        aria-hidden="true"
+        className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"
+        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+      >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
       <input
-        type="text"
+        type="search"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Pesquisar..."
-        className="w-full bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-gray-300 dark:focus:border-gray-600 rounded-lg pl-8 pr-7 py-1.5 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors"
+        aria-label="Pesquisar posts"
+        className="w-full bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-gray-300 dark:focus:border-gray-600 rounded-lg pl-8 pr-7 py-1.5 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
       />
       {value && (
-        <button onClick={clear} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={clear}
+          aria-label="Limpar pesquisa"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-0.5"
+        >
+          <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -51,6 +73,10 @@ function SearchBar() {
   )
 }
 
+/**
+ * Link de navegação que aplica estilo ativo com base na rota atual.
+ * @param {{ to: string, children: React.ReactNode, onClick?: () => void }} props
+ */
 function NavLink({ to, children, onClick }) {
   const { pathname } = useLocation()
   const active = pathname === to
@@ -58,7 +84,8 @@ function NavLink({ to, children, onClick }) {
     <Link
       to={to}
       onClick={onClick}
-      className={`text-sm px-3 py-2 rounded-lg transition-colors ${
+      aria-current={active ? 'page' : undefined}
+      className={`text-sm px-3 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
         active
           ? 'bg-blue-50 text-blue-700 font-medium dark:bg-blue-900/30 dark:text-blue-400'
           : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800'
@@ -114,7 +141,11 @@ function UserMenu({ user, onLogout }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-lg overflow-hidden animate-slide-down z-30">
+        <div
+          role="menu"
+          aria-label="Menu do usuário"
+          className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-lg overflow-hidden animate-slide-down z-30"
+        >
           <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-100 dark:border-gray-800">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{user?.name}</p>
             {user?.email && (
@@ -122,7 +153,7 @@ function UserMenu({ user, onLogout }) {
             )}
           </div>
 
-          <div className="py-1">
+          <div className="py-1" role="group">
             <DropdownItem to="/me/profile" onClick={close}>Meu perfil</DropdownItem>
             <DropdownItem to="/me/posts" onClick={close}>Meus posts</DropdownItem>
             {user?.role === 'ADMIN' && (
@@ -130,7 +161,7 @@ function UserMenu({ user, onLogout }) {
             )}
           </div>
 
-          <div className="border-t border-gray-100 dark:border-gray-800 py-1">
+          <div role="group" className="border-t border-gray-100 dark:border-gray-800 py-1">
             <DropdownItem danger onClick={() => { close(); onLogout() }}>Sair da conta</DropdownItem>
           </div>
         </div>
@@ -194,8 +225,8 @@ export default function Header() {
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link to="/" onClick={closeMenu} className="flex items-center gap-2.5 shrink-0">
-          <span className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs font-bold select-none">M</span>
+        <Link to="/" onClick={closeMenu} aria-label="Ir para o feed" className="flex items-center gap-2.5 shrink-0">
+          <span aria-hidden="true" className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs font-bold select-none">M</span>
           <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Mural Digital</span>
         </Link>
 
@@ -233,14 +264,16 @@ export default function Header() {
           <button
             onClick={() => setMenuOpen((o) => !o)}
             className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Menu"
+            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
           >
             {menuOpen ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             )}
@@ -250,7 +283,7 @@ export default function Header() {
 
       {/* Mobile menu dropdown */}
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 flex flex-col gap-2 animate-slide-down">
+        <nav id="mobile-menu" className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 flex flex-col gap-2 animate-slide-down">
           <SearchBar />
           <NavLink to="/" onClick={closeMenu}>Feed</NavLink>
           <NavLink to="/submit" onClick={closeMenu}>Publicar</NavLink>
@@ -268,7 +301,8 @@ export default function Header() {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="text-sm text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  aria-label="Sair da conta"
+                  className="text-sm text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 >
                   Sair
                 </button>
@@ -292,7 +326,7 @@ export default function Header() {
               </Link>
             </div>
           )}
-        </div>
+        </nav>
       )}
     </header>
   )

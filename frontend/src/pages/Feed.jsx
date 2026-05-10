@@ -1,3 +1,12 @@
+/**
+ * Página principal do feed de posts da comunidade.
+ *
+ * Funcionalidades:
+ * - Listagem paginada com scroll infinito via IntersectionObserver
+ * - Filtro por categoria (toggle: clique novamente para remover)
+ * - Pesquisa por texto via query string `?q=` (sincronizada com o SearchBar do Header)
+ * - Skeletons de loading e estado vazio contextualizado
+ */
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../api'
@@ -69,12 +78,13 @@ export default function Feed() {
           <p className="text-sm text-gray-400">Pimenta Bueno</p>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-1 items-center">
+        <div role="group" aria-label="Filtrar por categoria" className="mb-6 flex flex-wrap gap-1 items-center">
           {CATEGORIES.map((c) => (
             <button
               key={c}
               onClick={() => handleCategoryClick(c)}
-              className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+              aria-pressed={category === c}
+              className={`text-sm px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 category === c
                   ? 'bg-blue-50 text-blue-600 font-medium dark:bg-blue-900/25 dark:text-blue-400'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800'
@@ -84,13 +94,19 @@ export default function Feed() {
             </button>
           ))}
           {category && (
-            <button onClick={clearAll} className="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+            <button
+              onClick={clearAll}
+              aria-label="Limpar filtros"
+              className="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
               limpar
             </button>
           )}
         </div>
 
-        {error && <div className="text-center py-16 text-red-400 text-sm">{error}</div>}
+        {error && (
+          <div role="alert" className="text-center py-16 text-red-400 text-sm">{error}</div>
+        )}
 
         {!loading && !error && posts.length === 0 && (
           <div className="text-center py-16">
@@ -133,7 +149,7 @@ export default function Feed() {
         </div>
 
         {loading && (
-          <div className="flex flex-col gap-4 mt-4">
+          <div aria-busy="true" aria-label="Carregando posts" className="flex flex-col gap-4 mt-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 animate-pulse">
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/4 mb-3" />

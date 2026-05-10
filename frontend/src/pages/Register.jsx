@@ -1,3 +1,7 @@
+/**
+ * Página de cadastro de novos usuários.
+ * Após o registro bem-sucedido, autentica automaticamente e redireciona para o feed.
+ */
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { apiFetch } from '../api'
@@ -40,26 +44,58 @@ export default function Register() {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg px-4 py-3 text-sm mb-4">
+          <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg px-4 py-3 text-sm mb-4">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome</label>
-            <input name="name" type="text" value={form.name} onChange={handleChange} required className={INPUT} />
+            <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome</label>
+            <input
+              id="reg-name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              className={INPUT}
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail</label>
-            <input name="email" type="email" value={form.email} onChange={handleChange} required className={INPUT} />
+            <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail</label>
+            <input
+              id="reg-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              className={INPUT}
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha</label>
-            <input name="password" type="password" value={form.password} onChange={handleChange} required minLength={6} className={INPUT} />
+            <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha</label>
+            <input
+              id="reg-password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              minLength={6}
+              className={INPUT}
+            />
             <p className="text-xs text-gray-400 mt-1.5">Mínimo 6 caracteres</p>
           </div>
-          <button type="submit" disabled={loading} className="bg-blue-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-blue-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mt-1"
+          >
             {loading ? 'Criando...' : 'Criar conta'}
           </button>
         </form>

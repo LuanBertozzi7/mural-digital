@@ -1,3 +1,8 @@
+/**
+ * Página de detalhe de um post individual.
+ * Exibe título, descrição completa, categoria, bairro, autor, data e contato (quando informado).
+ * Posts com status 404 redirecionam silenciosamente para o feed.
+ */
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { apiFetch } from '../api'
@@ -40,7 +45,7 @@ export default function PostDetail() {
     return (
       <div className="min-h-screen">
         <div className="max-w-2xl mx-auto px-4 py-10">
-          <div className="animate-pulse space-y-4">
+          <div aria-busy="true" aria-label="Carregando post" className="animate-pulse space-y-4">
             <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-16" />
             <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded w-3/4 mt-6" />
             <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-full" />
@@ -81,13 +86,13 @@ export default function PostDetail() {
           Voltar ao feed
         </Link>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-7">
-          <div className="flex items-center gap-2 mb-5">
+        <article className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5 sm:p-7">
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORY_PILL[post.category]}`}>
               {CATEGORY_LABELS[post.category]}
             </span>
             <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -133,26 +138,26 @@ export default function PostDetail() {
             )
           })()}
 
-          <div className="flex items-center justify-between pt-5 border-t border-gray-100 dark:border-gray-800">
-            <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between pt-5 border-t border-gray-100 dark:border-gray-800 gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 min-w-0">
               <Avatar user={{ name: post.author, avatarUrl: post.authorAvatar }} size="sm" />
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{post.author}</span>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300 truncate">{post.author}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400 dark:text-gray-500">{date}</span>
+            <div className="flex items-center gap-3 shrink-0">
+              <time dateTime={post.createdAt} className="text-xs text-gray-400 dark:text-gray-500">{date}</time>
               <button
                 onClick={handleShare}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                aria-label="Compartilhar"
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                aria-label="Compartilhar este post"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
                 Compartilhar
               </button>
             </div>
           </div>
-        </div>
+        </article>
       </div>
     </div>
   )

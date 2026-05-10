@@ -1,3 +1,7 @@
+/**
+ * Página de login com e-mail e senha.
+ * Redireciona admins para /admin e usuários comuns para o feed após autenticação.
+ */
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { apiFetch } from '../api'
@@ -40,22 +44,44 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg px-4 py-3 text-sm mb-4">
+          <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg px-4 py-3 text-sm mb-4">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail</label>
-            <input name="email" type="email" value={form.email} onChange={handleChange} required className={INPUT} />
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              className={INPUT}
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha</label>
-            <input name="password" type="password" value={form.password} onChange={handleChange} required className={INPUT} />
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              className={INPUT}
+            />
           </div>
           <div className="flex items-center justify-between mt-1">
-            <button type="submit" disabled={loading} className="bg-blue-600 text-white text-sm font-medium py-2.5 px-5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-600 text-white text-sm font-medium py-2.5 px-5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
             <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-blue-600 transition-colors">
